@@ -198,7 +198,7 @@
             }
 
             setupEventListeners() {
-                // BOTÓN ADMIN - YA FUNCIONA
+                // BOTÓN ADMIN
                 const adminBtn = document.getElementById('adminAccessBtn');
                 if (adminBtn) {
                     adminBtn.addEventListener('click', () => {
@@ -214,6 +214,32 @@
                 if (closeAdmin) closeAdmin.addEventListener('click', () => this.hideAdminModal());
                 if (cancelAdmin) cancelAdmin.addEventListener('click', () => this.hideAdminModal());
                 if (submitAdmin) submitAdmin.addEventListener('click', () => this.handleAdminLogin());
+
+                // MODAL PROPIEDAD - ARREGLADO
+                const closePropertyModal = document.getElementById('closePropertyModal');
+                if (closePropertyModal) {
+                    closePropertyModal.addEventListener('click', () => {
+                        this.hidePropertyModal();
+                    });
+                }
+
+                // Cerrar modal propiedad al tocar fuera
+                const propertyModal = document.getElementById('propertyModal');
+                if (propertyModal) {
+                    propertyModal.addEventListener('click', (e) => {
+                        if (e.target === propertyModal) {
+                            this.hidePropertyModal();
+                        }
+                    });
+                }
+
+                // BOTÓN CONTACTAR
+                const contactBtn = document.querySelector('.btn-contact');
+                if (contactBtn) {
+                    contactBtn.addEventListener('click', () => {
+                        alert('📞 Un agente se pondrá en contacto contigo pronto.');
+                    });
+                }
 
                 // FILTROS
                 const mainFilterBtn = document.getElementById('mainFilterBtn');
@@ -251,14 +277,6 @@
                         if (filterOptions) filterOptions.classList.add('hidden');
                     }
                 });
-
-                // BOTÓN CONTACTAR
-                const contactBtn = document.querySelector('.btn-contact');
-                if (contactBtn) {
-                    contactBtn.addEventListener('click', () => {
-                        alert('📞 Un agente se pondrá en contacto contigo pronto.');
-                    });
-                }
             }
 
             showAdminModal() {
@@ -271,6 +289,22 @@
             hideAdminModal() {
                 const modal = document.getElementById('adminModal');
                 if (modal) modal.classList.add('hidden');
+            }
+
+            showPropertyModal() {
+                const modal = document.getElementById('propertyModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                console.log('🔓 Modal propiedad abierto');
+                }
+            }
+
+            hidePropertyModal() {
+                const modal = document.getElementById('propertyModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    console.log('🔒 Modal propiedad cerrado');
+                }
             }
 
             handleAdminLogin() {
@@ -536,10 +570,6 @@
                         });
                     });
                 }
-            }
-
-            showPropertyModal() {
-                document.getElementById('propertyModal').classList.remove('hidden');
             }
 
             getTypeLabel(type) {
