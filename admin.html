@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
     <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="admin-container">
         <header class="admin-header">
             <h1>⚙️ Panel de Administración</h1>
             <nav>
-                <a href="index.html">🏪 Ver Tienda</a>
+                <a href="index.html" class="btn-store">🏪 Ver Tienda</a>
                 <button id="logoutBtn" class="btn-logout">🚪 Cerrar Sesión</button>
             </nav>
         </header>
@@ -26,6 +27,7 @@
             </aside>
 
             <main class="admin-main">
+                <!-- Dashboard -->
                 <section id="dashboard" class="admin-section">
                     <h2>📊 Dashboard</h2>
                     <div class="stats-grid">
@@ -48,6 +50,7 @@
                     </div>
                 </section>
 
+                <!-- Gestionar Propiedades -->
                 <section id="properties" class="admin-section hidden">
                     <h2>🏠 Gestionar Propiedades</h2>
                     <div class="properties-list" id="propertiesList">
@@ -55,20 +58,22 @@
                     </div>
                 </section>
 
+                <!-- Agregar Propiedad -->
                 <section id="add-property" class="admin-section hidden">
                     <h2>➕ Agregar Nueva Propiedad</h2>
-                    <form id="propertyForm">
+                    <form id="propertyForm" class="property-form">
+                        <!-- Información Básica -->
                         <div class="form-section">
-                            <h3>Información Básica</h3>
+                            <h3>📝 Información Básica</h3>
                             <div class="form-group">
-                                <label for="propertyTitle">Título:</label>
-                                <input type="text" id="propertyTitle" required>
+                                <label for="propertyTitle">Título de la Propiedad:</label>
+                                <input type="text" id="propertyTitle" placeholder="Ej: Casa moderna en zona residencial" required>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="propertyType">Tipo:</label>
+                                    <label for="propertyType">Tipo de Propiedad:</label>
                                     <select id="propertyType" required>
-                                        <option value="">Seleccionar</option>
+                                        <option value="">Seleccionar tipo</option>
                                         <option value="casa">Casa</option>
                                         <option value="apartamento">Apartamento</option>
                                         <option value="oficina">Oficina</option>
@@ -76,31 +81,84 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="propertyPrice">Precio ($):</label>
-                                    <input type="number" id="propertyPrice" required>
+                                    <label for="propertyPrice">Precio (USD):</label>
+                                    <input type="number" id="propertyPrice" placeholder="Ej: 150000" required>
                                 </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="propertyDescription">Descripción:</label>
+                                <textarea id="propertyDescription" placeholder="Describe la propiedad..." rows="4" required></textarea>
                             </div>
                         </div>
 
+                        <!-- Características -->
                         <div class="form-section">
-                            <h3>Ubicación</h3>
-                            <div class="form-group">
-                                <label for="propertyAddress">Dirección:</label>
-                                <input type="text" id="propertyAddress" required>
-                            </div>
+                            <h3>🏠 Características</h3>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="propertyLat">Latitud:</label>
-                                    <input type="number" id="propertyLat" step="any" required>
+                                    <label for="propertyBedrooms">Habitaciones:</label>
+                                    <input type="number" id="propertyBedrooms" value="0" min="0">
                                 </div>
                                 <div class="form-group">
-                                    <label for="propertyLng">Longitud:</label>
-                                    <input type="number" id="propertyLng" step="any" required>
+                                    <label for="propertyBathrooms">Baños:</label>
+                                    <input type="number" id="propertyBathrooms" value="0" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="propertyArea">Área (m²):</label>
+                                    <input type="number" id="propertyArea" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="propertyParking">
+                                    <label for="propertyParking">Estacionamiento</label>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="propertyPool">
+                                    <label for="propertyPool">Piscina</label>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="propertyGarden">
+                                    <label for="propertyGarden">Jardín</label>
                                 </div>
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-primary">Agregar Propiedad</button>
+                        <!-- Ubicación con Mapa -->
+                        <div class="form-section">
+                            <h3>📍 Ubicación en el Mapa</h3>
+                            <div class="form-group">
+                                <label for="propertyAddress">Dirección Completa:</label>
+                                <input type="text" id="propertyAddress" placeholder="Ej: Calle Principal #123, Ciudad" required>
+                            </div>
+                            <div class="map-selector">
+                                <p>Haz clic en el mapa para seleccionar la ubicación:</p>
+                                <div id="locationMap"></div>
+                                <div class="coordinates-display">
+                                    <span>Coordenadas seleccionadas:</span>
+                                    <span id="selectedCoordinates">Lat: 18.7357, Lng: -70.1627</span>
+                                </div>
+                                <input type="hidden" id="propertyLat" value="18.7357">
+                                <input type="hidden" id="propertyLng" value="-70.1627">
+                            </div>
+                        </div>
+
+                        <!-- Galería de Imágenes -->
+                        <div class="form-section">
+                            <h3>🖼️ Galería de Imágenes (Máximo 5)</h3>
+                            <div class="image-upload-area" id="imageUploadArea">
+                                <div class="upload-placeholder">
+                                    <span>+</span>
+                                    <p>Arrastra imágenes aquí o haz clic para seleccionar</p>
+                                </div>
+                                <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
+                            </div>
+                            <div class="image-preview" id="imagePreview">
+                                <!-- Previsualizaciones de imágenes -->
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary btn-submit">Agregar Propiedad</button>
                     </form>
                 </section>
             </main>
@@ -108,6 +166,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/admin.js"></script>
 </body>
 </html>
