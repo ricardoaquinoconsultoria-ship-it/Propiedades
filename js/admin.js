@@ -9,10 +9,28 @@ class AdminManager {
 
     async init() {
         console.log('🔄 Inicializando AdminManager...');
+        await this.testSupabaseConnection();
         this.setupEventListeners();
         await this.initializeLocationMap();
         await this.loadPropertiesFromSupabase();
         this.setupImageUpload();
+    }
+
+    async testSupabaseConnection() {
+        try {
+            console.log('🔍 Probando conexión con Supabase...');
+            const { data, error } = await supabase.from('properties').select('count').limit(1);
+            
+            if (error) {
+                console.error('❌ Error de conexión Supabase:', error);
+                this.showError(`Error de conexión: ${error.message}`);
+            } else {
+                console.log('✅ Conexión Supabase exitosa');
+            }
+        } catch (error) {
+            console.error('❌ Error crítico de conexión:', error);
+            this.showError('No se pudo conectar a la base de datos');
+        }
     }
 
     async loadPropertiesFromSupabase() {
@@ -26,7 +44,7 @@ class AdminManager {
 
             if (error) {
                 console.error('Error cargando propiedades:', error);
-                this.showError('Error cargando propiedades: ' + error.message);
+                this.showError(`Error cargando propiedades: ${error.message}`);
                 return;
             }
 
@@ -37,20 +55,19 @@ class AdminManager {
             
         } catch (error) {
             console.error('Error crítico:', error);
-            this.showError('Error crítico al cargar propiedades');
+            this.showError(`Error crítico: ${error.message}`);
         }
     }
 
+    // ... (el resto del código se mantiene igual)
     async handleAddProperty() {
         const submitBtn = document.querySelector('.btn-submit');
         const originalText = submitBtn.innerHTML;
         
         try {
-            // Mostrar loading
             submitBtn.innerHTML = '⏳ Guardando...';
             submitBtn.disabled = true;
 
-            // Obtener datos del formulario
             const formData = {
                 title: document.getElementById('propertyTitle').value.trim(),
                 type: document.getElementById('propertyType').value,
@@ -74,33 +91,23 @@ class AdminManager {
                 created_at: new Date().toISOString()
             };
 
-            // Validaciones
-            if (!this.validateForm(formData)) {
-                return;
-            }
+            if (!this.validateForm(formData)) return;
 
             console.log('📤 Enviando propiedad a Supabase...', formData);
 
-            // Subir a Supabase
             const { data, error } = await supabase
                 .from('properties')
                 .insert([formData])
                 .select();
 
-            if (error) {
-                throw new Error(error.message);
-            }
+            if (error) throw new Error(error.message);
 
-            // Éxito
             if (data && data.length > 0) {
                 this.properties.unshift(data[0]);
                 this.updateDashboard();
                 this.renderPropertiesList();
-                
                 alert('✅ Propiedad agregada exitosamente!');
                 this.resetForm();
-                
-                // Cambiar a la sección de propiedades
                 this.showSection('properties');
                 this.updateActiveNav('properties');
             }
@@ -109,37 +116,18 @@ class AdminManager {
             console.error('Error agregando propiedad:', error);
             alert('❌ Error al agregar la propiedad: ' + error.message);
         } finally {
-            // Restaurar botón
-            submitBtn.innerHTML = originalText;
+            submitBtn.innerHTML = '🏠 Agregar Propiedad';
             submitBtn.disabled = false;
         }
     }
 
     validateForm(formData) {
-        if (!formData.title) {
-            alert('❌ El título es requerido');
-            return false;
-        }
-        if (!formData.type) {
-            alert('❌ El tipo de propiedad es requerido');
-            return false;
-        }
-        if (!formData.price || formData.price <= 0) {
-            alert('❌ El precio debe ser mayor a 0');
-            return false;
-        }
-        if (!formData.description) {
-            alert('❌ La descripción es requerida');
-            return false;
-        }
-        if (!formData.location.address) {
-            alert('❌ La dirección es requerida');
-            return false;
-        }
-        if (!formData.area || formData.area <= 0) {
-            alert('❌ El área es requerida');
-            return false;
-        }
+        if (!formData.title) { alert('❌ El título es requerido'); return false; }
+        if (!formData.type) { alert('❌ El tipo de propiedad es requerido'); return false; }
+        if (!formData.price || formData.price <= 0) { alert('❌ El precio debe ser mayor a 0'); return false; }
+        if (!formData.description) { alert('❌ La descripción es requerida'); return false; }
+        if (!formData.location.address) { alert('❌ La dirección es requerida'); return false; }
+        if (!formData.area || formData.area <= 0) { alert('❌ El área es requerida'); return false; }
         return true;
     }
 
@@ -423,9 +411,15 @@ class AdminManager {
                 <div class="error-message">
                     <h3>❌ Error</h3>
                     <p>${message}</p>
-                    <button onclick="adminManager.loadPropertiesFromSupabase()" class="btn-primary">
-                        Reintentar
-                    </button>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="adminManager.loadPropertiesFromSupabase()" class="btn-primary">
+                            🔄 Reintentar
+                        </button>
+                        <button onclick="adminManager.showSection('add-property'); adminManager.updateActiveNav('add-property')" 
+                                class="btn-secondary" style="margin-left: 0.5rem;">
+                            ➕ Agregar Propiedad Manualmente
+                        </button>
+                    </div>
                 </div>
             `;
         }
