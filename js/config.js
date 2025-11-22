@@ -27,23 +27,36 @@ function initializeSupabase() {
         
         // Crear un mock MEJORADO para evitar errores
         const mockSupabase = {
+            _isMock: true, // Bandera para identificar que es un mock
             from: (table) => ({
-                select: (columns = '*') => ({
-                    eq: (column, value) => Promise.resolve({ data: [], error: null }),
-                    order: (column, options = {}) => Promise.resolve({ data: [], error: null }),
-                    // Para consultas simples sin filtros
-                    then: (resolve) => resolve({ data: [], error: null })
-                }),
+                select: (columns = '*') => {
+                    const query = {
+                        eq: (column, value) => Promise.resolve({ 
+                            data: [], 
+                            error: null 
+                        }),
+                        order: (column, options = {}) => Promise.resolve({ 
+                            data: [], 
+                            error: null 
+                        }),
+                        then: (resolve) => resolve({ data: [], error: null })
+                    };
+                    return query;
+                },
                 insert: (data) => ({
-                    select: (columns = '*') => Promise.resolve({ 
-                        data: [{ 
-                            id: Date.now(), 
-                            ...data, 
+                    select: (columns = '*') => {
+                        console.log('📝 Mock: Insertando propiedad (datos locales)', data);
+                        const newProperty = {
+                            id: Date.now(),
+                            ...(Array.isArray(data) ? data[0] : data),
                             created_at: new Date().toISOString(),
                             status: 'disponible'
-                        }], 
-                        error: null 
-                    })
+                        };
+                        return Promise.resolve({ 
+                            data: [newProperty], 
+                            error: null 
+                        });
+                    }
                 }),
                 delete: () => ({
                     eq: (column, value) => Promise.resolve({ error: null })
@@ -58,9 +71,6 @@ function initializeSupabase() {
                 onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
             }
         };
-        
-        // Hacer que el mock sea compatible con la sintaxis de cadena
-        mockSupabase.from().select().then = (resolve) => resolve({ data: [], error: null });
         
         window.supabase = mockSupabase;
         console.warn('⚠️ Usando Supabase mock - Modo demo');
@@ -81,7 +91,7 @@ window.initializeSupabase = initializeSupabase;
 
 // Función para verificar el estado de Supabase
 window.checkSupabaseStatus = function() {
-    if (window.supabase && window.supabase.from) {
+    if (window.supabase && window.supabase.from && !window.supabase._isMock) {
         console.log('✅ Supabase está funcionando correctamente');
         return true;
     } else {
