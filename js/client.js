@@ -10,6 +10,8 @@ class ModernClientManager {
 
     async init() {
         console.log('🚀 Inicializando ModernClientManager...');
+        console.log('📊 Estado Supabase:', window.checkSupabaseStatus() ? 'REAL' : 'LOCAL');
+        
         this.setupEventListeners();
         await this.initializeMap();
         await this.loadProperties();
@@ -19,15 +21,14 @@ class ModernClientManager {
         try {
             console.log('📡 Cargando propiedades...');
             
-            // Siempre cargar desde el almacenamiento actual
-            const loadedProperties = await this.loadPropertiesData();
+            const loadedProperties = await this.loadFromDataSource();
             
             if (loadedProperties && loadedProperties.length > 0) {
                 console.log(`✅ ${loadedProperties.length} propiedades cargadas`);
                 this.properties = loadedProperties;
             } else {
-                console.log('📝 No hay propiedades, cargando ejemplos');
-                await this.loadExampleProperties();
+                console.log('ℹ️ No hay propiedades guardadas');
+                // No cargar ejemplos automáticamente, dejar vacío
             }
 
             this.applyFilter('all');
@@ -35,101 +36,38 @@ class ModernClientManager {
             
         } catch (error) {
             console.error('❌ Error cargando propiedades:', error);
-            await this.loadExampleProperties();
+            // No cargar ejemplos en caso de error
         }
     }
 
-    async loadPropertiesData() {
+    async loadFromDataSource() {
         try {
-            console.log('🔍 Cargando datos de propiedades...');
+            console.log('🔍 Cargando desde fuente de datos...');
             
             if (!window.supabase) {
-                console.log('❌ Supabase no disponible');
+                console.log('❌ Cliente no disponible');
                 return null;
             }
 
-            // Usar el método then() que funciona en ambos modos
-            const { data: properties, error } = await new Promise((resolve) => {
-                window.supabase
-                    .from('properties')
-                    .select('*')
-                    .eq('status', 'disponible')
-                    .order('created_at', { ascending: false })
-                    .then(resolve);
-            });
+            // Usar el método que funcione según el modo
+            const { data: properties, error } = await window.supabase
+                .from('properties')
+                .select('*')
+                .eq('status', 'disponible')
+                .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('Error cargando propiedades:', error);
+                console.error('❌ Error cargando datos:', error);
                 return null;
             }
 
-            console.log('📊 Propiedades cargadas:', properties);
+            console.log('📊 Datos cargados:', properties);
             return properties;
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('❌ Error en carga de datos:', error);
             return null;
         }
-    }
-
-    async loadExampleProperties() {
-        console.log('🔄 Cargando propiedades de ejemplo...');
-        
-        // Propiedades de ejemplo básicas
-        this.properties = [
-            {
-                id: 1,
-                title: "Casa Familiar con Piscina",
-                type: "casa",
-                price: 350000,
-                location: {
-                    address: "Calle Principal #123",
-                    lat: 18.4855,
-                    lng: -69.8731
-                },
-                characteristics: {
-                    bedrooms: 4,
-                    bathrooms: 3,
-                    area: 220,
-                    parking: true,
-                    pool: true,
-                    garden: true
-                },
-                description: "Hermosa casa familiar en zona residencial.",
-                images: [
-                    "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=600"
-                ],
-                status: "disponible",
-                created_at: new Date().toISOString()
-            },
-            {
-                id: 2,
-                title: "Apartamento Moderno",
-                type: "apartamento",
-                price: 185000,
-                location: {
-                    address: "Av. Principal #456",
-                    lat: 18.4735,
-                    lng: -69.8904
-                },
-                characteristics: {
-                    bedrooms: 2,
-                    bathrooms: 2,
-                    area: 95,
-                    parking: true,
-                    pool: false,
-                    garden: false
-                },
-                description: "Apartamento moderno en zona céntrica.",
-                images: [
-                    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600"
-                ],
-                status: "disponible",
-                created_at: new Date().toISOString()
-            }
-        ];
-        
-        console.log(`✅ ${this.properties.length} propiedades de ejemplo cargadas`);
     }
 
     setupEventListeners() {
@@ -154,13 +92,17 @@ class ModernClientManager {
         
         // Botón para recargar propiedades
         this.addReloadButton();
+        
+        // Botón para limpiar datos (solo desarrollo)
+        this.addClearButton();
     }
 
     addReloadButton() {
         const reloadBtn = document.createElement('button');
         reloadBtn.innerHTML = '🔄 Actualizar';
+        reloadBtn.title = 'Recargar propiedades';
         reloadBtn.style.position = 'fixed';
-        reloadBtn.style.bottom = '20px';
+        reloadBtn.style.bottom = '70px';
         reloadBtn.style.right = '20px';
         reloadBtn.style.zIndex = '1000';
         reloadBtn.style.background = '#2563eb';
@@ -174,6 +116,33 @@ class ModernClientManager {
             this.loadProperties();
         });
         document.body.appendChild(reloadBtn);
+    }
+
+    addClearButton() {
+        // Solo para desarrollo - eliminar en producción
+        const clearBtn = document.createElement('button');
+        clearBtn.innerHTML = '🗑️ Limpiar';
+        clearBtn.title = 'Limpiar datos locales (solo desarrollo)';
+        clearBtn.style.position = 'fixed';
+        clearBtn.style.bottom = '20px';
+        clearBtn.style.right = '20px';
+        clearBtn.style.zIndex = '1000';
+        clearBtn.style.background = '#dc2626';
+        clearBtn.style.color = 'white';
+        clearBtn.style.border = 'none';
+        clearBtn.style.padding = '10px 15px';
+        clearBtn.style.borderRadius = '8px';
+        clearBtn.style.cursor = 'pointer';
+        clearBtn.style.fontSize = '14px';
+        clearBtn.addEventListener('click', () => {
+            if (confirm('¿Limpiar todos los datos locales? (Solo desarrollo)')) {
+                localStorage.clear();
+                this.properties = [];
+                this.applyFilter('all');
+                alert('Datos locales limpiados');
+            }
+        });
+        document.body.appendChild(clearBtn);
     }
 
     setupAdminModal() {
@@ -415,13 +384,17 @@ class ModernClientManager {
             try {
                 const group = new L.featureGroup(this.markers);
                 this.map.fitBounds(group.getBounds().pad(0.1));
+                console.log(`✅ ${this.markers.length} marcadores renderizados`);
             } catch (error) {
                 console.error('Error ajustando mapa:', error);
             }
+        } else {
+            console.log('ℹ️ No hay propiedades para mostrar en el mapa');
         }
     }
 
     applyFilter(filter) {
+        console.log(`🔍 Aplicando filtro: ${filter}`);
         this.currentFilter = filter;
         
         if (filter === 'all') {
@@ -431,6 +404,8 @@ class ModernClientManager {
                 property.type === filter
             );
         }
+        
+        console.log(`📊 ${this.filteredProperties.length} propiedades después del filtro`);
         
         this.renderProperties();
         this.updatePropertiesCount();
@@ -459,13 +434,26 @@ class ModernClientManager {
 
     renderProperties() {
         const container = document.getElementById('propertiesGrid');
-        if (!container) return;
+        if (!container) {
+            console.log('❌ Contenedor de propiedades no encontrado');
+            return;
+        }
+
+        console.log(`🎨 Renderizando ${this.filteredProperties.length} propiedades...`);
 
         if (this.filteredProperties.length === 0) {
             container.innerHTML = `
                 <div class="no-properties" style="grid-column: 1/-1; text-align: center; padding: 60px; color: #64748b;">
                     <h3>🏠 No hay propiedades disponibles</h3>
-                    <p>Intenta con otros filtros de búsqueda</p>
+                    <p>Agrega propiedades desde el panel de administración</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="clientManager.loadProperties()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin: 0.5rem;">
+                            🔄 Recargar
+                        </button>
+                        <button onclick="clientManager.showAdminModal()" style="background: #f59e0b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin: 0.5rem;">
+                            ⚙️ Ir al Admin
+                        </button>
+                    </div>
                 </div>
             `;
             return;
@@ -494,6 +482,8 @@ class ModernClientManager {
                 </div>
             </div>
         `).join('');
+
+        console.log('✅ Propiedades renderizadas correctamente');
     }
 
     showPropertyDetails(propertyId) {
@@ -508,6 +498,6 @@ class ModernClientManager {
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Inicializando Client Manager...');
+    console.log('🚀 DOM cargado, inicializando Client Manager...');
     window.clientManager = new ModernClientManager();
 });
