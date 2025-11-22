@@ -59,7 +59,6 @@ class AdminManager {
         }
     }
 
-    // ... (el resto del código se mantiene igual)
     async handleAddProperty() {
         const submitBtn = document.querySelector('.btn-submit');
         const originalText = submitBtn.innerHTML;
@@ -68,46 +67,62 @@ class AdminManager {
             submitBtn.innerHTML = '⏳ Guardando...';
             submitBtn.disabled = true;
 
+            // Obtener datos del formulario CON VALORES POR DEFECTO
             const formData = {
                 title: document.getElementById('propertyTitle').value.trim(),
                 type: document.getElementById('propertyType').value,
-                price: parseFloat(document.getElementById('propertyPrice').value),
+                price: parseFloat(document.getElementById('propertyPrice').value) || 0,
                 description: document.getElementById('propertyDescription').value.trim(),
                 location: {
                     address: document.getElementById('propertyAddress').value.trim(),
-                    lat: parseFloat(document.getElementById('propertyLat').value),
-                    lng: parseFloat(document.getElementById('propertyLng').value)
+                    lat: parseFloat(document.getElementById('propertyLat').value) || 18.7357,
+                    lng: parseFloat(document.getElementById('propertyLng').value) || -70.1627
                 },
                 characteristics: {
                     bedrooms: parseInt(document.getElementById('propertyBedrooms').value) || 0,
                     bathrooms: parseInt(document.getElementById('propertyBathrooms').value) || 0,
-                    area: parseInt(document.getElementById('propertyArea').value),
-                    parking: document.getElementById('propertyParking').checked,
-                    pool: document.getElementById('propertyPool').checked,
-                    garden: document.getElementById('propertyGarden').checked
+                    area: parseInt(document.getElementById('propertyArea').value) || 100, // VALOR POR DEFECTO
+                    parking: document.getElementById('propertyParking').checked || false,
+                    pool: document.getElementById('propertyPool').checked || false,
+                    garden: document.getElementById('propertyGarden').checked || false
                 },
                 status: 'disponible',
                 images: this.selectedImages.map(img => img.src),
                 created_at: new Date().toISOString()
             };
 
-            if (!this.validateForm(formData)) return;
+            // DEBUG: Ver qué valores tenemos
+            console.log('📋 Datos del formulario:', formData);
+            console.log('📍 Área value:', document.getElementById('propertyArea').value);
+            console.log('📍 Área parsed:', parseInt(document.getElementById('propertyArea').value));
+
+            // Validaciones MEJORADAS
+            if (!this.validateForm(formData)) {
+                return;
+            }
 
             console.log('📤 Enviando propiedad a Supabase...', formData);
 
+            // Subir a Supabase
             const { data, error } = await supabase
                 .from('properties')
                 .insert([formData])
                 .select();
 
-            if (error) throw new Error(error.message);
+            if (error) {
+                throw new Error(error.message);
+            }
 
+            // Éxito
             if (data && data.length > 0) {
                 this.properties.unshift(data[0]);
                 this.updateDashboard();
                 this.renderPropertiesList();
+                
                 alert('✅ Propiedad agregada exitosamente!');
                 this.resetForm();
+                
+                // Cambiar a la sección de propiedades
                 this.showSection('properties');
                 this.updateActiveNav('properties');
             }
@@ -122,12 +137,50 @@ class AdminManager {
     }
 
     validateForm(formData) {
-        if (!formData.title) { alert('❌ El título es requerido'); return false; }
-        if (!formData.type) { alert('❌ El tipo de propiedad es requerido'); return false; }
-        if (!formData.price || formData.price <= 0) { alert('❌ El precio debe ser mayor a 0'); return false; }
-        if (!formData.description) { alert('❌ La descripción es requerida'); return false; }
-        if (!formData.location.address) { alert('❌ La dirección es requerida'); return false; }
-        if (!formData.area || formData.area <= 0) { alert('❌ El área es requerida'); return false; }
+        // Validar título
+        if (!formData.title || formData.title.trim() === '') {
+            alert('❌ El título de la propiedad es requerido');
+            document.getElementById('propertyTitle').focus();
+            return false;
+        }
+        
+        // Validar tipo
+        if (!formData.type) {
+            alert('❌ Debes seleccionar un tipo de propiedad');
+            document.getElementById('propertyType').focus();
+            return false;
+        }
+        
+        // Validar precio
+        if (!formData.price || formData.price <= 0) {
+            alert('❌ El precio debe ser un número mayor a 0');
+            document.getElementById('propertyPrice').focus();
+            return false;
+        }
+        
+        // Validar descripción
+        if (!formData.description || formData.description.trim() === '') {
+            alert('❌ La descripción de la propiedad es requerida');
+            document.getElementById('propertyDescription').focus();
+            return false;
+        }
+        
+        // Validar dirección
+        if (!formData.location.address || formData.location.address.trim() === '') {
+            alert('❌ La dirección de la propiedad es requerida');
+            document.getElementById('propertyAddress').focus();
+            return false;
+        }
+        
+        // Validar área (MEJORADA - más flexible)
+        const areaValue = document.getElementById('propertyArea').value;
+        if (!areaValue || areaValue.trim() === '' || parseInt(areaValue) <= 0) {
+            alert('❌ El área en metros cuadrados es requerida\n\nEjemplo: 120 (para 120 m²)');
+            document.getElementById('propertyArea').focus();
+            return false;
+        }
+        
+        console.log('✅ Validación completada exitosamente');
         return true;
     }
 
@@ -150,9 +203,23 @@ class AdminManager {
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
             if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                window.location.href = 'index.html';
+                window.location.href = './';
             }
         });
+
+        // Agregar validación en tiempo real para el área
+        document.getElementById('propertyArea').addEventListener('input', (e) => {
+            this.validateAreaField(e.target);
+        });
+    }
+
+    validateAreaField(field) {
+        const value = field.value;
+        if (value && parseInt(value) > 0) {
+            field.style.borderColor = '#16a34a'; // Verde si es válido
+        } else {
+            field.style.borderColor = '#dc2626'; // Rojo si es inválido
+        }
     }
 
     setupNavigation() {
@@ -338,6 +405,9 @@ class AdminManager {
                         <span>📍</span>
                         <span>${property.location?.address || 'Dirección no disponible'}</span>
                     </div>
+                    <div class="property-area">
+                        <small>Área: ${property.characteristics?.area || '0'} m²</small>
+                    </div>
                 </div>
                 <div class="property-actions">
                     <button class="btn-edit" onclick="adminManager.editProperty(${property.id})">
@@ -390,6 +460,9 @@ class AdminManager {
         document.getElementById('propertyForm').reset();
         this.selectedImages = [];
         this.updateImagePreview();
+        
+        // Restablecer el estilo del campo área
+        document.getElementById('propertyArea').style.borderColor = '';
         
         if (this.locationMarker) {
             this.locationMap.removeLayer(this.locationMarker);
