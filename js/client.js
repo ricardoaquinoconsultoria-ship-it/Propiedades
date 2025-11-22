@@ -19,14 +19,13 @@ class ModernClientManager {
         try {
             console.log('📡 Cargando propiedades...');
             
-            // Primero intentar cargar de Supabase
+            // Cargar desde Supabase
             const supabaseProperties = await this.loadFromSupabase();
             
             if (supabaseProperties && supabaseProperties.length > 0) {
                 console.log(`✅ ${supabaseProperties.length} propiedades cargadas desde Supabase`);
                 this.properties = supabaseProperties;
             } else {
-                // Si no hay propiedades en Supabase, cargar ejemplos
                 console.log('📝 Cargando propiedades de ejemplo');
                 await this.loadExampleProperties();
             }
@@ -71,7 +70,6 @@ class ModernClientManager {
 
     async loadExampleProperties() {
         console.log('🔄 Cargando propiedades de ejemplo...');
-        // Propiedades de ejemplo por si Supabase falla
         this.properties = [
             {
                 id: 1,
@@ -91,10 +89,9 @@ class ModernClientManager {
                     pool: true,
                     garden: true
                 },
-                description: "Impresionante casa familiar ubicada en una zona residencial exclusiva. Cuenta con amplios espacios, diseño moderno y áreas verdes. Perfecta para familias que buscan comodidad y seguridad.",
+                description: "Impresionante casa familiar ubicada en una zona residencial exclusiva.",
                 images: [
-                    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600",
-                    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600"
+                    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600"
                 ],
                 status: "disponible",
                 created_at: new Date().toISOString()
@@ -117,10 +114,9 @@ class ModernClientManager {
                     pool: true,
                     garden: false
                 },
-                description: "Elegante apartamento en torre de lujo con vista al mar. Incluye amenities premium: gimnasio, piscina infinity y seguridad 24/7. Ideal para ejecutivos o inversión.",
+                description: "Elegante apartamento en torre de lujo con vista al mar.",
                 images: [
-                    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600",
-                    "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600"
+                    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600"
                 ],
                 status: "disponible",
                 created_at: new Date().toISOString()
@@ -181,7 +177,6 @@ class ModernClientManager {
         if (cancelBtn) cancelBtn.addEventListener('click', () => this.hideAdminModal());
         if (submitBtn) submitBtn.addEventListener('click', () => this.handleAdminLogin());
         
-        // Cerrar modal al hacer clic fuera
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 this.hideAdminModal();
@@ -204,7 +199,6 @@ class ModernClientManager {
             });
         }
 
-        // Botón de contacto
         const contactBtn = document.querySelector('.btn-contact');
         if (contactBtn) {
             contactBtn.addEventListener('click', () => {
@@ -220,32 +214,26 @@ class ModernClientManager {
 
         if (!mainFilterBtn || !filterOptions) return;
 
-        // Toggle del dropdown
         mainFilterBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             filterOptions.classList.toggle('hidden');
         });
 
-        // Selección de filtro
         options.forEach(option => {
             option.addEventListener('click', () => {
                 const filter = option.getAttribute('data-filter');
                 this.applyFilter(filter);
                 
-                // Actualizar UI
                 options.forEach(opt => opt.classList.remove('active'));
                 option.classList.add('active');
                 
-                // Actualizar texto del botón principal
                 const optionText = option.querySelector('.option-text').textContent;
                 document.querySelector('.filter-text').textContent = optionText;
                 
-                // Ocultar dropdown
                 filterOptions.classList.add('hidden');
             });
         });
 
-        // Cerrar dropdown al hacer clic fuera
         document.addEventListener('click', () => {
             if (filterOptions) filterOptions.classList.add('hidden');
         });
@@ -275,7 +263,6 @@ class ModernClientManager {
     updatePropertyModal(property) {
         if (!property) return;
 
-        // Información básica
         const setText = (id, text) => {
             const element = document.getElementById(id);
             if (element) element.textContent = text;
@@ -293,12 +280,10 @@ class ModernClientManager {
         
         setText('modalPropertyDescription', property.description || 'Sin descripción');
 
-        // Características
         setText('modalBedrooms', property.characteristics?.bedrooms || 0);
         setText('modalBathrooms', property.characteristics?.bathrooms || 0);
         setText('modalArea', property.characteristics?.area || 0);
 
-        // Galería de imágenes
         this.updatePropertyGallery(property.images || []);
     }
 
@@ -318,19 +303,16 @@ class ModernClientManager {
                 </div>
             `).join('');
 
-            // Event listeners para miniaturas
             thumbnailsContainer.querySelectorAll('.thumbnail').forEach(thumb => {
                 thumb.addEventListener('click', () => {
                     const imageSrc = thumb.getAttribute('data-image');
                     mainImage.src = imageSrc;
                     
-                    // Actualizar estado activo
                     thumbnailsContainer.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
                     thumb.classList.add('active');
                 });
             });
         } else {
-            // Imagen por defecto si no hay imágenes
             mainImage.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600';
             thumbnailsContainer.innerHTML = '';
         }
@@ -350,7 +332,6 @@ class ModernClientManager {
         const passwordInput = document.getElementById('adminPassword');
         const password = passwordInput ? passwordInput.value : '';
         
-        // Por simplicidad, cualquier contraseña funciona
         if (password) {
             window.location.href = 'admin.html';
         } else {
@@ -376,7 +357,6 @@ class ModernClientManager {
     renderMapMarkers() {
         console.log('📍 Renderizando marcadores del mapa...');
         
-        // Limpiar marcadores anteriores
         this.markers.forEach(marker => {
             if (this.map && marker) {
                 this.map.removeLayer(marker);
@@ -425,7 +405,6 @@ class ModernClientManager {
             }
         });
 
-        // Ajustar vista del mapa
         if (this.markers.length > 0) {
             try {
                 const group = new L.featureGroup(this.markers);
@@ -530,7 +509,6 @@ class ModernClientManager {
         console.log('✅ Propiedades renderizadas correctamente');
     }
 
-    // Método para mostrar propiedad por ID
     showPropertyDetails(propertyId) {
         console.log(`🔍 Mostrando detalles de propiedad ID: ${propertyId}`);
         const property = this.properties.find(p => p.id == propertyId);
@@ -548,3 +526,13 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 DOM cargado, inicializando Client Manager...');
     window.clientManager = new ModernClientManager();
 });
+
+// DEBUG TEMPORAL
+console.log('=== DEBUG MODE CLIENT ===');
+setTimeout(() => {
+    console.log('🕒 Diagnóstico automático ejecutado');
+    if (window.clientManager && window.clientManager.properties) {
+        console.log(`📊 Total propiedades: ${window.clientManager.properties.length}`);
+        console.log('Propiedades:', window.clientManager.properties);
+    }
+}, 5000);
