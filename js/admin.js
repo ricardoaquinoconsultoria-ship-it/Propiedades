@@ -4,16 +4,13 @@ class AdminManager {
         this.locationMap = null;
         this.locationMarker = null;
         this.selectedImages = [];
-        this.maxImages = 5; // LÍMITE DE 5 IMÁGENES
+        this.maxImages = 5;
         this.init();
     }
 
     async init() {
         console.log('🔄 Inicializando AdminManager...');
-        
-        // Verificar Supabase ANTES de todo
         await this.verifySupabase();
-        
         this.setupEventListeners();
         await this.initializeLocationMap();
         await this.loadPropertiesFromSupabase();
@@ -22,14 +19,10 @@ class AdminManager {
 
     async verifySupabase() {
         console.log('🔍 Verificando Supabase...');
-        
-        // Esperar un momento para que Supabase se cargue
         await new Promise(resolve => setTimeout(resolve, 100));
         
         if (!window.supabase || typeof window.supabase.from !== 'function') {
-            console.error('❌ Supabase no está disponible');
-            
-            // Intentar re-inicializar
+            console.error('❌ Supabase no disponible');
             if (window.initializeSupabase) {
                 window.supabase = window.initializeSupabase();
                 console.log('🔄 Supabase re-inicializado');
@@ -45,7 +38,6 @@ class AdminManager {
         try {
             console.log('📡 Cargando propiedades desde Supabase...');
             
-            // Verificar nuevamente antes de usar
             if (!window.supabase || typeof window.supabase.from !== 'function') {
                 throw new Error('Supabase no está disponible');
             }
@@ -80,12 +72,10 @@ class AdminManager {
             submitBtn.innerHTML = '⏳ Guardando...';
             submitBtn.disabled = true;
 
-            // Verificar Supabase antes de proceder
             if (!window.supabase || typeof window.supabase.from !== 'function') {
                 throw new Error('Supabase no está disponible. Recarga la página.');
             }
 
-            // Obtener datos del formulario
             const formData = {
                 title: document.getElementById('propertyTitle').value.trim(),
                 type: document.getElementById('propertyType').value,
@@ -109,19 +99,14 @@ class AdminManager {
                 created_at: new Date().toISOString()
             };
 
-            // DEBUG: Ver qué valores tenemos
             console.log('📋 Datos del formulario:', formData);
-            console.log('📍 Área value:', document.getElementById('propertyArea').value);
-            console.log('📍 Área parsed:', parseInt(document.getElementById('propertyArea').value));
 
-            // Validaciones
             if (!this.validateForm(formData)) {
                 return;
             }
 
             console.log('📤 Enviando propiedad a Supabase...', formData);
 
-            // **CORRECCIÓN: Sintaxis correcta de Supabase**
             const { data, error } = await window.supabase
                 .from('properties')
                 .insert([formData])
@@ -133,12 +118,10 @@ class AdminManager {
 
             console.log('✅ Propiedad agregada:', data);
 
-            // Si no hay error, fue exitoso - recargar propiedades
             alert('✅ Propiedad agregada exitosamente!');
             await this.loadPropertiesFromSupabase();
             this.resetForm();
             
-            // Cambiar a la sección de propiedades
             this.showSection('properties');
             this.updateActiveNav('properties');
 
@@ -152,42 +135,36 @@ class AdminManager {
     }
 
     validateForm(formData) {
-        // Validar título
         if (!formData.title || formData.title.trim() === '') {
             alert('❌ El título de la propiedad es requerido');
             document.getElementById('propertyTitle').focus();
             return false;
         }
         
-        // Validar tipo
         if (!formData.type) {
             alert('❌ Debes seleccionar un tipo de propiedad');
             document.getElementById('propertyType').focus();
             return false;
         }
         
-        // Validar precio
         if (!formData.price || formData.price <= 0) {
             alert('❌ El precio debe ser un número mayor a 0');
             document.getElementById('propertyPrice').focus();
             return false;
         }
         
-        // Validar descripción
         if (!formData.description || formData.description.trim() === '') {
             alert('❌ La descripción de la propiedad es requerida');
             document.getElementById('propertyDescription').focus();
             return false;
         }
         
-        // Validar dirección
         if (!formData.location.address || formData.location.address.trim() === '') {
             alert('❌ La dirección de la propiedad es requerida');
             document.getElementById('propertyAddress').focus();
             return false;
         }
         
-        // Validar área
         const areaValue = document.getElementById('propertyArea').value;
         if (!areaValue || areaValue.trim() === '' || parseInt(areaValue) <= 0) {
             alert('❌ El área en metros cuadrados es requerida\n\nEjemplo: 120 (para 120 m²)');
@@ -222,7 +199,6 @@ class AdminManager {
             }
         });
 
-        // Agregar validación en tiempo real para el área
         document.getElementById('propertyArea').addEventListener('input', (e) => {
             this.validateAreaField(e.target);
         });
@@ -326,7 +302,6 @@ class AdminManager {
     }
 
     handleImageFiles(files) {
-        // Verificar límite ANTES de procesar
         if (this.selectedImages.length + files.length > this.maxImages) {
             this.showMaxImagesMessage();
             return;
@@ -382,7 +357,6 @@ class AdminManager {
             </div>
         `).join('');
 
-        // Event listeners para botones de eliminar
         previewContainer.querySelectorAll('.remove-image').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -512,7 +486,6 @@ class AdminManager {
         this.updateImagePreview();
         this.updateImageCounter();
         
-        // Restablecer el estilo del campo área
         document.getElementById('propertyArea').style.borderColor = '';
         
         if (this.locationMarker) {
@@ -552,6 +525,6 @@ class AdminManager {
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Inicializando aplicación...');
+    console.log('🚀 Inicializando aplicación Admin...');
     window.adminManager = new AdminManager();
 });
