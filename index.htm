@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Propiedades Disponibles</title>
+    <title>Inmobiliaria Moderna</title>
     <link rel="stylesheet" href="css/client.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Botón flotante para administrador -->
+    <!-- Botón flotante admin -->
     <div class="admin-floating-btn">
-        <button id="adminAccessBtn" title="Acceso Administrador">🛠️</button>
+        <button id="adminAccessBtn" title="Acceso Administrador">⚙️ Admin</button>
     </div>
 
-    <!-- Modal de contraseña para administrador -->
+    <!-- Modal admin -->
     <div id="adminModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -21,135 +22,154 @@
                 <button class="close-modal" id="closeAdminModal">×</button>
             </div>
             <div class="modal-body">
-                <p>Ingresa la contraseña para acceder al panel de administración:</p>
-                <form id="adminPasswordForm">
-                    <input type="password" id="adminPassword" placeholder="Contraseña" required>
-                    <div class="modal-buttons">
-                        <button type="button" id="cancelAdminBtn" class="btn-secondary">Cancelar</button>
-                        <button type="submit" class="btn-primary">Acceder</button>
-                    </div>
-                </form>
+                <input type="password" id="adminPassword" placeholder="Contraseña de administrador">
+                <div class="modal-buttons">
+                    <button id="cancelAdminBtn" class="btn-secondary">Cancelar</button>
+                    <button id="submitAdminBtn" class="btn-primary">Acceder</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal de detalles de propiedad -->
+    <!-- Modal propiedad -->
     <div id="propertyModal" class="modal hidden">
-        <div class="modal-content property-modal-content">
+        <div class="modal-content property-modal">
             <div class="modal-header">
-                <h3 id="propertyModalTitle">Detalles de la Propiedad</h3>
+                <h3 id="modalPropertyTitle">Propiedad</h3>
                 <button class="close-modal" id="closePropertyModal">×</button>
             </div>
-            <div class="modal-body property-modal-body">
+            <div class="modal-body">
                 <div class="property-gallery">
                     <div class="main-image">
-                        <img id="propertyMainImage" src="" alt="Imagen principal">
+                        <img id="mainPropertyImage" src="" alt="Imagen principal">
                     </div>
                     <div class="image-thumbnails" id="propertyThumbnails">
-                        <!-- Las miniaturas se generarán aquí -->
+                        <!-- Miniaturas aquí -->
                     </div>
                 </div>
-                
                 <div class="property-details">
-                    <div class="property-price" id="propertyModalPrice"></div>
-                    <div class="property-type" id="propertyModalType"></div>
-                    <div class="property-address" id="propertyModalAddress"></div>
-                    
-                    <div class="property-features">
-                        <h4>📊 Características</h4>
-                        <div class="features-grid" id="propertyFeatures">
-                            <!-- Características se generarán aquí -->
+                    <div class="price-section">
+                        <span class="price" id="modalPropertyPrice">$0</span>
+                        <span class="type-badge" id="modalPropertyType">Casa</span>
+                    </div>
+                    <div class="address" id="modalPropertyAddress">
+                        <span>📍</span>
+                        <span>Dirección no disponible</span>
+                    </div>
+                    <div class="features">
+                        <div class="feature">
+                            <span>🛏️</span>
+                            <span id="modalBedrooms">0</span>
+                            <span>hab.</span>
+                        </div>
+                        <div class="feature">
+                            <span>🚿</span>
+                            <span id="modalBathrooms">0</span>
+                            <span>baños</span>
+                        </div>
+                        <div class="feature">
+                            <span>📐</span>
+                            <span id="modalArea">0</span>
+                            <span>m²</span>
                         </div>
                     </div>
-                    
-                    <div class="property-description">
-                        <h4>📝 Descripción</h4>
-                        <p id="propertyDescription"></p>
+                    <div class="description">
+                        <h4>Descripción</h4>
+                        <p id="modalPropertyDescription">Descripción no disponible.</p>
                     </div>
-                    
-                    <div class="property-contact">
-                        <h4>📞 Contacto</h4>
-                        <div class="contact-info">
-                            <p><strong>Teléfono:</strong> <span id="propertyPhone">+1 809-555-1234</span></p>
-                            <p><strong>Email:</strong> <span id="propertyEmail">info@inmobiliaria.com</span></p>
-                            <p><strong>Agente:</strong> <span id="propertyAgent">María Rodríguez</span></p>
-                        </div>
-                        <button class="btn-primary contact-btn">📞 Contactar Ahora</button>
+                    <div class="contact-section">
+                        <button class="btn-contact">📞 Contactar Agente</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Header -->
-    <header class="client-header">
-        <div class="header-content">
-            <div class="header-main">
-                <h1>🏠 Propiedades Disponibles</h1>
-                <div class="properties-filter">
-                    <button class="filter-btn" id="filterBtn">
-                        <span class="filter-text">📋 Todas las Propiedades</span>
-                        <span class="filter-arrow">▼</span>
-                    </button>
-                    <div class="filter-dropdown hidden" id="filterDropdown">
-                        <div class="filter-option active" data-filter="all">
-                            <span class="filter-icon">🏘️</span>
-                            <span class="filter-label">Todas las Propiedades</span>
-                        </div>
-                        <div class="filter-option" data-filter="casa">
-                            <span class="filter-icon">🏠</span>
-                            <span class="filter-label">Casas</span>
-                        </div>
-                        <div class="filter-option" data-filter="apartamento">
-                            <span class="filter-icon">🏢</span>
-                            <span class="filter-label">Apartamentos</span>
-                        </div>
-                        <div class="filter-option" data-filter="oficina">
-                            <span class="filter-icon">🏛️</span>
-                            <span class="filter-label">Oficinas</span>
-                        </div>
-                        <div class="filter-option" data-filter="solar">
-                            <span class="filter-icon">📐</span>
-                            <span class="filter-label">Solares</span>
-                        </div>
-                    </div>
-                </div>
+    <!-- Header Moderno -->
+    <header class="modern-header">
+        <div class="header-container">
+            <div class="logo">
+                <h1>🏠 Inmobiliaria Elite</h1>
             </div>
-            <p>Encuentra tu hogar ideal en las mejores ubicaciones</p>
+            <nav class="main-nav">
+                <a href="#properties">Propiedades</a>
+                <a href="#about">Nosotros</a>
+                <a href="#contact">Contacto</a>
+            </nav>
         </div>
     </header>
 
-    <!-- Contenido Principal -->
-    <main class="client-main">
-        <!-- Mapa de Propiedades -->
-        <section class="map-section">
-            <div id="map"></div>
-        </section>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2>Encuentra tu hogar ideal</h2>
+            <p>Las mejores propiedades en las ubicaciones más exclusivas</p>
+        </div>
+    </section>
 
-        <!-- Lista de Propiedades -->
-        <section class="properties-section">
-            <div class="container">
-                <div class="section-header">
-                    <h2 id="propertiesTitle">📋 Todas las Propiedades</h2>
-                    <div class="properties-count">
-                        <span id="propertiesCount">0</span> propiedades encontradas
-                    </div>
+    <!-- Filtro Principal -->
+    <section class="filter-section">
+        <div class="container">
+            <div class="filter-main-btn" id="mainFilterBtn">
+                <span class="filter-icon">🏘️</span>
+                <span class="filter-text">Propiedades Disponibles</span>
+                <span class="filter-arrow">▼</span>
+            </div>
+            <div class="filter-options hidden" id="filterOptions">
+                <div class="filter-option" data-filter="all">
+                    <span class="option-icon">🏘️</span>
+                    <span class="option-text">Todas las Propiedades</span>
                 </div>
-                <div class="properties-grid" id="propertiesGrid">
-                    <div class="loading">Cargando propiedades...</div>
+                <div class="filter-option" data-filter="casa">
+                    <span class="option-icon">🏠</span>
+                    <span class="option-text">Casas</span>
+                </div>
+                <div class="filter-option" data-filter="apartamento">
+                    <span class="option-icon">🏢</span>
+                    <span class="option-text">Apartamentos</span>
+                </div>
+                <div class="filter-option" data-filter="oficina">
+                    <span class="option-icon">🏛️</span>
+                    <span class="option-text">Oficinas</span>
+                </div>
+                <div class="filter-option" data-filter="solar">
+                    <span class="option-icon">📐</span>
+                    <span class="option-text">Solares</span>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
+
+    <!-- Mapa Interactivo -->
+    <section class="map-section">
+        <div class="container">
+            <h3 class="section-title">📍 Ubicación de Propiedades</h3>
+            <div id="map"></div>
+        </div>
+    </section>
+
+    <!-- Lista de Propiedades -->
+    <section class="properties-section" id="properties">
+        <div class="container">
+            <div class="section-header">
+                <h3 class="section-title" id="propertiesTitle">Todas las Propiedades</h3>
+                <div class="properties-count">
+                    <span id="propertiesCount">0</span> propiedades encontradas
+                </div>
+            </div>
+            <div class="properties-grid" id="propertiesGrid">
+                <!-- Propiedades se cargarán aquí -->
+            </div>
+        </div>
+    </section>
 
     <!-- Footer -->
-    <footer class="client-footer">
+    <footer class="modern-footer">
         <div class="container">
-            <p>&copy; 2024 Inmobiliaria. Todos los derechos reservados.</p>
+            <p>&copy; 2024 Inmobiliaria Elite. Todos los derechos reservados.</p>
         </div>
     </footer>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/client.js"></script>
