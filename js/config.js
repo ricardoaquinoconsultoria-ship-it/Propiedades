@@ -1,72 +1,128 @@
-// Configuración de Supabase
+// Configuración de Supabase - VERSIÓN SIMPLIFICADA
 const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1qfeM7S7wffWb3q0VcH7RTVg5H6VnL_2QcTj7E';
 
-// Inicializar Supabase
+// Función para inicializar Supabase
 function initializeSupabase() {
-    console.log('🚀 Inicializando Supabase...');
+    console.log('🔧 Inicializando Supabase...');
     
     try {
-        // Intentar usar la librería real de Supabase
+        // Verificar si la librería de Supabase está cargada
         if (typeof supabase !== 'undefined' && supabase.createClient) {
+            console.log('✅ Usando librería Supabase real');
             const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             window.supabase = client;
-            console.log('✅ Supabase REAL inicializado correctamente');
             return client;
+        } else {
+            console.log('⚠️ Librería Supabase no encontrada, usando modo local');
+            return createLocalSupabase();
         }
-        
-        // Si no está disponible, crear cliente básico
-        console.log('⚠️ Creando cliente Supabase básico');
-        const client = {
-            from: (table) => ({
-                select: (columns = '*') => ({
-                    eq: (column, value) => Promise.resolve({ data: [], error: null }),
-                    order: (column, options = {}) => Promise.resolve({ data: [], error: null }),
-                    then: (resolve) => resolve({ data: [], error: null })
-                }),
-                insert: (data) => ({
-                    select: (columns = '*') => Promise.resolve({ 
-                        data: [{ 
-                            id: Date.now(), 
-                            ...(Array.isArray(data) ? data[0] : data),
-                            created_at: new Date().toISOString(),
-                            status: 'disponible'
-                        }], 
-                        error: null 
-                    })
-                }),
-                delete: () => ({
-                    eq: (column, value) => Promise.resolve({ error: null })
-                }),
-                update: (data) => ({
-                    eq: (column, value) => Promise.resolve({ data: null, error: null })
-                })
-            })
-        };
-        
-        window.supabase = client;
-        console.log('✅ Cliente Supabase básico creado');
-        return client;
-        
     } catch (error) {
         console.error('❌ Error inicializando Supabase:', error);
-        return null;
+        return createLocalSupabase();
     }
+}
+
+// Crear Supabase local para modo offline
+function createLocalSupabase() {
+    console.log('🏠 Creando Supabase local (modo demo)');
+    
+    const localSupabase = {
+        _isLocal: true,
+        from: (table) => ({
+            select: (columns = '*') => {
+                const query = {
+                    eq: (column, value) => {
+                        console.log(`📝 Local: SELECT FROM ${table} WHERE ${column} = ${value}`);
+                        const data = getLocalData(table).filter(item => item[column] === value);
+                        return Promise.resolve({ data, error: null });
+                    },
+                    order: (column, options = { ascending: false }) => {
+                        console.log(`📝 Local: SELECT FROM ${table} ORDER BY ${column}`);
+                        let data = getLocalData(table);
+                        data.sort((a, b) => {
+                            if (options.ascending) {
+                                return a[column] > b[column] ? 1 : -1;
+                            } else {
+                                return a[column] < b[column] ? 1 : -1;
+                            }
+                        });
+                        return Promise.resolve({ data, error: null });
+                    },
+                    then: (resolve) => {
+                        console.log(`📝 Local: SELECT FROM ${table}`);
+                        const data = getLocalData(table);
+                        resolve({ data, error: null });
+                    }
+                };
+                return query;
+            },
+            insert: (data) => ({
+                select: (columns = '*') => {
+                    console.log('📝 Local: INSERT', data);
+                    const newData = Array.isArray(data) ? data : [data];
+                    newData.forEach(item => {
+                        item.id = item.id || Date.now();
+                        item.created_at = item.created_at || new Date().toISOString();
+                        item.status = item.status || 'disponible';
+                        addLocalData('properties', item);
+                    });
+                    return Promise.resolve({ data: newData, error: null });
+                }
+            }),
+            delete: () => ({
+                eq: (column, value) => {
+                    console.log(`📝 Local: DELETE FROM properties WHERE ${column} = ${value}`);
+                    removeLocalData('properties', column, value);
+                    return Promise.resolve({ error: null });
+                }
+            }),
+            update: (data) => ({
+                eq: (column, value) => {
+                    console.log(`📝 Local: UPDATE properties SET`, data, `WHERE ${column} = ${value}`);
+                    return Promise.resolve({ data: null, error: null });
+                }
+            })
+        })
+    };
+    
+    return localSupabase;
+}
+
+// Almacenamiento local
+function getLocalData(table) {
+    const key = `supabase_local_${table}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+}
+
+function addLocalData(table, item) {
+    const key = `supabase_local_${table}`;
+    const currentData = getLocalData(table);
+    currentData.push(item);
+    localStorage.setItem(key, JSON.stringify(currentData));
+}
+
+function removeLocalData(table, column, value) {
+    const key = `supabase_local_${table}`;
+    const currentData = getLocalData(table);
+    const newData = currentData.filter(item => item[column] !== value);
+    localStorage.setItem(key, JSON.stringify(newData));
 }
 
 // Inicializar inmediatamente
 window.supabase = initializeSupabase();
 window.initializeSupabase = initializeSupabase;
 
-// Verificar conexión
+// Función para verificar estado
 window.checkSupabaseStatus = function() {
-    if (window.supabase && window.supabase.from) {
-        console.log('✅ Supabase está disponible');
+    if (window.supabase && !window.supabase._isLocal) {
+        console.log('✅ Conectado a Supabase REAL');
         return true;
     } else {
-        console.log('❌ Supabase no disponible');
+        console.log('🏠 Usando almacenamiento LOCAL');
         return false;
     }
 };
 
-console.log('🔧 Configuración de Supabase cargada');
+console.log('✅ Configuración cargada - Modo:', window.supabase._isLocal ? 'LOCAL' : 'SUPABASE REAL');
