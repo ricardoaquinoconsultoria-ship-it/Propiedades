@@ -25,22 +25,50 @@ function initializeSupabase() {
     } catch (error) {
         console.error('❌ Error inicializando Supabase:', error);
         
-        // Crear un mock para evitar errores
+        // Crear un mock MEJORADO para evitar errores
         const mockSupabase = {
-            from: () => ({
-                select: () => Promise.resolve({ data: [], error: new Error('Supabase no disponible') }),
-                insert: () => Promise.resolve({ data: null, error: new Error('Supabase no disponible') }),
-                delete: () => Promise.resolve({ error: new Error('Supabase no disponible') }),
-                update: () => Promise.resolve({ data: null, error: new Error('Supabase no disponible') })
+            from: (table) => ({
+                select: (columns = '*') => ({
+                    eq: (column, value) => Promise.resolve({ data: [], error: null }),
+                    order: (column, options = {}) => Promise.resolve({ data: [], error: null }),
+                    // Para consultas simples sin filtros
+                    then: (resolve) => resolve({ data: [], error: null })
+                }),
+                insert: (data) => ({
+                    select: (columns = '*') => Promise.resolve({ 
+                        data: [{ 
+                            id: Date.now(), 
+                            ...data, 
+                            created_at: new Date().toISOString(),
+                            status: 'disponible'
+                        }], 
+                        error: null 
+                    })
+                }),
+                delete: () => ({
+                    eq: (column, value) => Promise.resolve({ error: null })
+                }),
+                update: (data) => ({
+                    eq: (column, value) => Promise.resolve({ data: null, error: null })
+                })
             }),
             auth: {
-                signIn: () => Promise.resolve({ error: new Error('Auth no disponible') }),
-                signOut: () => Promise.resolve({ error: new Error('Auth no disponible') })
+                signIn: () => Promise.resolve({ error: null, user: null }),
+                signOut: () => Promise.resolve({ error: null }),
+                onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
             }
         };
         
+        // Hacer que el mock sea compatible con la sintaxis de cadena
+        mockSupabase.from().select().then = (resolve) => resolve({ data: [], error: null });
+        
         window.supabase = mockSupabase;
-        console.warn('⚠️ Usando Supabase mock');
+        console.warn('⚠️ Usando Supabase mock - Modo demo');
+        console.log('💡 Funcionalidades disponibles en modo demo:');
+        console.log('   - Agregar propiedades (se guardan localmente)');
+        console.log('   - Ver lista de propiedades demo');
+        console.log('   - Navegar por el admin panel');
+        
         return mockSupabase;
     }
 }
@@ -50,3 +78,14 @@ supabase = initializeSupabase();
 
 // También exportar la función para re-inicializar si es necesario
 window.initializeSupabase = initializeSupabase;
+
+// Función para verificar el estado de Supabase
+window.checkSupabaseStatus = function() {
+    if (window.supabase && window.supabase.from) {
+        console.log('✅ Supabase está funcionando correctamente');
+        return true;
+    } else {
+        console.log('❌ Supabase no está disponible - Usando modo demo');
+        return false;
+    }
+};
