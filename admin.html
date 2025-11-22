@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
     <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -148,17 +149,18 @@
                             <h3>🖼️ Galería de Imágenes (Máximo 5)</h3>
                             <div class="image-upload-area" id="imageUploadArea">
                                 <div class="upload-placeholder">
-                                    <span>+</span>
+                                    <span>📷</span>
                                     <p>Arrastra imágenes aquí o haz clic para seleccionar</p>
+                                    <small>Formatos: JPG, PNG, WEBP (Máx. 5 imágenes)</small>
                                 </div>
                                 <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
                             </div>
                             <div class="image-preview" id="imagePreview">
-                                <!-- Previsualizaciones de imágenes -->
+                                <!-- Previsualizaciones de imágenes se generarán aquí -->
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-primary btn-submit">Agregar Propiedad</button>
+                        <button type="submit" class="btn-primary btn-submit">🏠 Agregar Propiedad</button>
                     </form>
                 </section>
             </main>
