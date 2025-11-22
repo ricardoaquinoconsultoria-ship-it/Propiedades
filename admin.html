@@ -13,7 +13,6 @@
         <header class="admin-header">
             <h1>⚙️ Panel de Administración</h1>
             <nav>
-                <!-- ENLACE CORREGIDO: usa ./ para raíz -->
                 <a href="./" class="btn-store">🏪 Ver Tienda</a>
                 <button id="logoutBtn" class="btn-logout">🚪 Cerrar Sesión</button>
             </nav>
@@ -68,12 +67,12 @@
                         <div class="form-section">
                             <h3>📝 Información Básica</h3>
                             <div class="form-group">
-                                <label for="propertyTitle">Título de la Propiedad:</label>
+                                <label for="propertyTitle" class="required-field">Título de la Propiedad:</label>
                                 <input type="text" id="propertyTitle" placeholder="Ej: Casa moderna en zona residencial" required>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="propertyType">Tipo de Propiedad:</label>
+                                    <label for="propertyType" class="required-field">Tipo de Propiedad:</label>
                                     <select id="propertyType" required>
                                         <option value="">Seleccionar tipo</option>
                                         <option value="casa">Casa</option>
@@ -83,12 +82,12 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="propertyPrice">Precio (USD):</label>
-                                    <input type="number" id="propertyPrice" placeholder="Ej: 150000" required>
+                                    <label for="propertyPrice" class="required-field">Precio (USD):</label>
+                                    <input type="number" id="propertyPrice" placeholder="Ej: 150000" required min="1">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="propertyDescription">Descripción:</label>
+                                <label for="propertyDescription" class="required-field">Descripción:</label>
                                 <textarea id="propertyDescription" placeholder="Describe la propiedad..." rows="4" required></textarea>
                             </div>
                         </div>
@@ -99,15 +98,18 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="propertyBedrooms">Habitaciones:</label>
-                                    <input type="number" id="propertyBedrooms" value="0" min="0">
+                                    <input type="number" id="propertyBedrooms" value="0" min="0" placeholder="0">
                                 </div>
                                 <div class="form-group">
                                     <label for="propertyBathrooms">Baños:</label>
-                                    <input type="number" id="propertyBathrooms" value="0" min="0">
+                                    <input type="number" id="propertyBathrooms" value="0" min="0" placeholder="0">
                                 </div>
                                 <div class="form-group">
-                                    <label for="propertyArea">Área (m²):</label>
-                                    <input type="number" id="propertyArea" required>
+                                    <label for="propertyArea" class="required-field">Área (m²):</label>
+                                    <input type="number" id="propertyArea" placeholder="Ej: 120 (metros cuadrados)" required min="1" step="1">
+                                    <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 0.3rem;">
+                                        Ingresa el área total en metros cuadrados
+                                    </small>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -130,7 +132,7 @@
                         <div class="form-section">
                             <h3>📍 Ubicación en el Mapa</h3>
                             <div class="form-group">
-                                <label for="propertyAddress">Dirección Completa:</label>
+                                <label for="propertyAddress" class="required-field">Dirección Completa:</label>
                                 <input type="text" id="propertyAddress" placeholder="Ej: Calle Principal #123, Ciudad" required>
                             </div>
                             <div class="map-selector">
