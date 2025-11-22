@@ -4,40 +4,53 @@ class AdminManager {
         this.locationMap = null;
         this.locationMarker = null;
         this.selectedImages = [];
+        this.maxImages = 5; // LÍMITE DE 5 IMÁGENES
         this.init();
     }
 
     async init() {
         console.log('🔄 Inicializando AdminManager...');
-        await this.testSupabaseConnection();
+        
+        // Verificar Supabase ANTES de todo
+        await this.verifySupabase();
+        
         this.setupEventListeners();
         await this.initializeLocationMap();
         await this.loadPropertiesFromSupabase();
         this.setupImageUpload();
     }
 
-    async testSupabaseConnection() {
-        try {
-            console.log('🔍 Probando conexión con Supabase...');
-            const { data, error } = await supabase.from('properties').select('count').limit(1);
+    async verifySupabase() {
+        console.log('🔍 Verificando Supabase...');
+        
+        // Esperar un momento para que Supabase se cargue
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (!window.supabase || typeof window.supabase.from !== 'function') {
+            console.error('❌ Supabase no está disponible');
             
-            if (error) {
-                console.error('❌ Error de conexión Supabase:', error);
-                this.showError(`Error de conexión: ${error.message}`);
+            // Intentar re-inicializar
+            if (window.initializeSupabase) {
+                window.supabase = window.initializeSupabase();
+                console.log('🔄 Supabase re-inicializado');
             } else {
-                console.log('✅ Conexión Supabase exitosa');
+                throw new Error('No se puede inicializar Supabase');
             }
-        } catch (error) {
-            console.error('❌ Error crítico de conexión:', error);
-            this.showError('No se pudo conectar a la base de datos');
         }
+        
+        console.log('✅ Supabase verificado correctamente');
     }
 
     async loadPropertiesFromSupabase() {
         try {
             console.log('📡 Cargando propiedades desde Supabase...');
             
-            const { data: properties, error } = await supabase
+            // Verificar nuevamente antes de usar
+            if (!window.supabase || typeof window.supabase.from !== 'function') {
+                throw new Error('Supabase no está disponible');
+            }
+            
+            const { data: properties, error } = await window.supabase
                 .from('properties')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -67,7 +80,12 @@ class AdminManager {
             submitBtn.innerHTML = '⏳ Guardando...';
             submitBtn.disabled = true;
 
-            // Obtener datos del formulario CON VALORES POR DEFECTO
+            // Verificar Supabase antes de proceder
+            if (!window.supabase || typeof window.supabase.from !== 'function') {
+                throw new Error('Supabase no está disponible. Recarga la página.');
+            }
+
+            // Obtener datos del formulario
             const formData = {
                 title: document.getElementById('propertyTitle').value.trim(),
                 type: document.getElementById('propertyType').value,
@@ -81,7 +99,7 @@ class AdminManager {
                 characteristics: {
                     bedrooms: parseInt(document.getElementById('propertyBedrooms').value) || 0,
                     bathrooms: parseInt(document.getElementById('propertyBathrooms').value) || 0,
-                    area: parseInt(document.getElementById('propertyArea').value) || 100, // VALOR POR DEFECTO
+                    area: parseInt(document.getElementById('propertyArea').value) || 100,
                     parking: document.getElementById('propertyParking').checked || false,
                     pool: document.getElementById('propertyPool').checked || false,
                     garden: document.getElementById('propertyGarden').checked || false
@@ -96,7 +114,7 @@ class AdminManager {
             console.log('📍 Área value:', document.getElementById('propertyArea').value);
             console.log('📍 Área parsed:', parseInt(document.getElementById('propertyArea').value));
 
-            // Validaciones MEJORADAS
+            // Validaciones
             if (!this.validateForm(formData)) {
                 return;
             }
@@ -104,7 +122,7 @@ class AdminManager {
             console.log('📤 Enviando propiedad a Supabase...', formData);
 
             // Subir a Supabase
-            const { data, error } = await supabase
+            const { data, error } = await window.supabase
                 .from('properties')
                 .insert([formData])
                 .select();
@@ -172,7 +190,7 @@ class AdminManager {
             return false;
         }
         
-        // Validar área (MEJORADA - más flexible)
+        // Validar área
         const areaValue = document.getElementById('propertyArea').value;
         if (!areaValue || areaValue.trim() === '' || parseInt(areaValue) <= 0) {
             alert('❌ El área en metros cuadrados es requerida\n\nEjemplo: 120 (para 120 m²)');
@@ -216,9 +234,9 @@ class AdminManager {
     validateAreaField(field) {
         const value = field.value;
         if (value && parseInt(value) > 0) {
-            field.style.borderColor = '#16a34a'; // Verde si es válido
+            field.style.borderColor = '#16a34a';
         } else {
-            field.style.borderColor = '#dc2626'; // Rojo si es inválido
+            field.style.borderColor = '#dc2626';
         }
     }
 
@@ -282,7 +300,13 @@ class AdminManager {
         const uploadArea = document.getElementById('imageUploadArea');
         const fileInput = document.getElementById('imageUpload');
 
-        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('click', () => {
+            if (this.selectedImages.length >= this.maxImages) {
+                this.showMaxImagesMessage();
+                return;
+            }
+            fileInput.click();
+        });
 
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -305,14 +329,20 @@ class AdminManager {
     }
 
     handleImageFiles(files) {
-        const maxImages = 5;
-        
-        if (this.selectedImages.length + files.length > maxImages) {
-            alert(`❌ Solo puedes subir máximo ${maxImages} imágenes`);
+        // Verificar límite ANTES de procesar
+        if (this.selectedImages.length + files.length > this.maxImages) {
+            this.showMaxImagesMessage();
             return;
         }
 
-        Array.from(files).forEach(file => {
+        const remainingSlots = this.maxImages - this.selectedImages.length;
+        const filesToProcess = Array.from(files).slice(0, remainingSlots);
+
+        if (files.length > remainingSlots) {
+            alert(`⚠️ Solo se procesarán ${remainingSlots} de ${files.length} imágenes (límite: ${this.maxImages})`);
+        }
+
+        filesToProcess.forEach(file => {
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 
@@ -325,11 +355,16 @@ class AdminManager {
                     
                     this.selectedImages.push(imageData);
                     this.updateImagePreview();
+                    this.updateImageCounter();
                 };
                 
                 reader.readAsDataURL(file);
             }
         });
+    }
+
+    showMaxImagesMessage() {
+        alert(`❌ Límite alcanzado\n\nSolo puedes subir máximo ${this.maxImages} imágenes.\n\nElimina alguna imagen existente para agregar nuevas.`);
     }
 
     updateImagePreview() {
@@ -350,6 +385,7 @@ class AdminManager {
             </div>
         `).join('');
 
+        // Event listeners para botones de eliminar
         previewContainer.querySelectorAll('.remove-image').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -359,9 +395,26 @@ class AdminManager {
         });
     }
 
+    updateImageCounter() {
+        const uploadArea = document.getElementById('imageUploadArea');
+        const placeholder = uploadArea.querySelector('p');
+        
+        if (this.selectedImages.length > 0) {
+            const remaining = this.maxImages - this.selectedImages.length;
+            if (placeholder) {
+                placeholder.innerHTML = `${this.selectedImages.length}/${this.maxImages} imágenes seleccionadas<br><small>Puedes agregar ${remaining} más</small>`;
+            }
+        } else {
+            if (placeholder) {
+                placeholder.innerHTML = 'Arrastra imágenes aquí o haz clic para seleccionar<br><small>Máximo 5 imágenes</small>';
+            }
+        }
+    }
+
     removeImage(id) {
         this.selectedImages = this.selectedImages.filter(img => img.id != id);
         this.updateImagePreview();
+        this.updateImageCounter();
     }
 
     updateDashboard() {
@@ -434,7 +487,7 @@ class AdminManager {
     async deleteProperty(propertyId) {
         if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
             try {
-                const { error } = await supabase
+                const { error } = await window.supabase
                     .from('properties')
                     .delete()
                     .eq('id', propertyId);
@@ -460,6 +513,7 @@ class AdminManager {
         document.getElementById('propertyForm').reset();
         this.selectedImages = [];
         this.updateImagePreview();
+        this.updateImageCounter();
         
         // Restablecer el estilo del campo área
         document.getElementById('propertyArea').style.borderColor = '';
