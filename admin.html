@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="admin-header">
+            <h1>⚙️ Panel de Administración</h1>
+            <nav>
+                <a href="index.html">🏪 Ver Tienda</a>
+                <button id="configAccessBtn" class="btn-primary">👑 Acceso Fundador</button>
+                <button id="logoutBtn" class="btn-logout">🚪 Cerrar Sesión</button>
+            </nav>
+        </header>
+
+        <!-- Modal de contraseña fundador -->
+        <div id="founderModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🔒 Acceso Fundador</h3>
+                    <button class="close-modal" id="closeFounderModal">×</button>
+                </div>
+                <div class="modal-body">
+                    <p>Ingresa la contraseña de fundador para acceder a la configuración:</p>
+                    <form id="founderPasswordForm">
+                        <input type="password" id="founderPassword" placeholder="Contraseña de fundador" required>
+                        <div class="modal-buttons">
+                            <button type="button" id="cancelFounderBtn" class="btn-secondary">Cancelar</button>
+                            <button type="submit" class="btn-primary">Acceder</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <ul class="sidebar-menu">
+                    <li><a href="#dashboard" class="active">📊 Dashboard</a></li>
+                    <li><a href="#properties">🏠 Gestionar Propiedades</a></li>
+                    <li><a href="#add-property">➕ Agregar Propiedad</a></li>
+                </ul>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="admin-main">
+                <!-- Dashboard -->
+                <section id="dashboard" class="admin-section">
+                    <h2>📊 Dashboard</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3 id="totalProperties">0</h3>
+                            <p>Total Propiedades</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="availableProperties">0</h3>
+                            <p>Disponibles</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="houseCount">0</h3>
+                            <p>Casas</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="apartmentCount">0</h3>
+                            <p>Apartamentos</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-actions">
+                        <h3>Acciones Rápidas</h3>
+                        <div class="action-buttons">
+                            <button onclick="adminManager.showSection('add-property')" class="btn-primary">
+                                ➕ Agregar Nueva Propiedad
+                            </button>
+                            <button onclick="adminManager.showSection('properties')" class="btn-primary">
+                                🏠 Gestionar Propiedades
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Gestionar Propiedades -->
+                <section id="properties" class="admin-section hidden">
+                    <h2>🏠 Gestionar Propiedades</h2>
+                    <div class="properties-list" id="propertiesList">
+                        <p>Cargando propiedades...</p>
+                    </div>
+                </section>
+
+                <!-- Agregar Propiedad -->
+                <section id="add-property" class="admin-section hidden">
+                    <h2>➕ Agregar Nueva Propiedad</h2>
+                    <form id="propertyForm">
+                        <div class="form-section">
+                            <h3>Información Básica</h3>
+                            <div class="form-group">
+                                <label for="propertyTitle">Título de la Propiedad:</label>
+                                <input type="text" id="propertyTitle" placeholder="Ej: Casa moderna en zona residencial" required>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="propertyType">Tipo de Propiedad:</label>
+                                    <select id="propertyType" required>
+                                        <option value="">Seleccionar tipo</option>
+                                        <option value="casa">Casa</option>
+                                        <option value="apartamento">Apartamento</option>
+                                        <option value="oficina">Oficina</option>
+                                        <option value="solar">Solar</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="propertyPrice">Precio ($):</label>
+                                    <input type="number" id="propertyPrice" placeholder="Ej: 150000" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Ubicación</h3>
+                            <div class="form-group">
+                                <label for="propertyAddress">Dirección:</label>
+                                <input type="text" id="propertyAddress" placeholder="Ej: Calle Principal #123" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="propertyLat">Latitud:</label>
+                                    <input type="number" id="propertyLat" step="any" placeholder="Ej: 18.7357" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="propertyLng">Longitud:</label>
+                                    <input type="number" id="propertyLng" step="any" placeholder="Ej: -70.1627" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Características</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="propertyBedrooms">Habitaciones:</label>
+                                    <input type="number" id="propertyBedrooms" placeholder="0" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="propertyBathrooms">Baños:</label>
+                                    <input type="number" id="propertyBathrooms" placeholder="0" min="0" step="0.5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="propertyArea">Área (m²):</label>
+                                    <input type="number" id="propertyArea" placeholder="0" min="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Imágenes</h3>
+                            <div class="form-group">
+                                <label for="propertyImages">Subir Imágenes:</label>
+                                <input type="file" id="propertyImages" multiple accept="image/*">
+                                <small>Puedes seleccionar múltiples imágenes</small>
+                            </div>
+                            <div id="imagePreview" class="image-preview"></div>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Agregar Propiedad</button>
+                    </form>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propiedades Disponibles</title>
+    <link rel="stylesheet" href="css/client.css">
+    <link rel="stylesheet" href="css/map.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <!-- Botón flotante para administrador -->
+    <div class="admin-floating-btn">
+        <button id="adminAccessBtn" title="Acceso Administrador">🛠️</button>
+    </div>
+
+    <!-- Modal de contraseña para administrador -->
+    <div id="adminModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔒 Acceso Administrador</h3>
+                <button class="close-modal" id="closeAdminModal">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Ingresa la contraseña para acceder al panel de administración:</p>
+                <form id="adminPasswordForm">
+                    <input type="password" id="adminPassword" placeholder="Contraseña" required>
+                    <div class="modal-buttons">
+                        <button type="button" id="cancelAdminBtn" class="btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn-primary">Acceder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="client-header">
+        <div class="header-content">
+            <div class="header-main">
+                <h1>🏠 Propiedades Disponibles</h1>
+                <!-- Botón de filtro de propiedades -->
+                <div class="properties-filter">
+                    <button class="filter-btn" id="filterBtn">
+                        <span class="filter-text">📋 Todas las Propiedades</span>
+                        <span class="filter-arrow">▼</span>
+                    </button>
+                    <div class="filter-dropdown hidden" id="filterDropdown">
+                        <div class="filter-option active" data-filter="all">
+                            <span class="filter-icon">🏘️</span>
+                            <span class="filter-label">Todas las Propiedades</span>
+                        </div>
+                        <div class="filter-option" data-filter="casa">
+                            <span class="filter-icon">🏠</span>
+                            <span class="filter-label">Casas</span>
+                        </div>
+                        <div class="filter-option" data-filter="apartamento">
+                            <span class="filter-icon">🏢</span>
+                            <span class="filter-label">Apartamentos</span>
+                        </div>
+                        <div class="filter-option" data-filter="oficina">
+                            <span class="filter-icon">🏛️</span>
+                            <span class="filter-label">Oficinas</span>
+                        </div>
+                        <div class="filter-option" data-filter="solar">
+                            <span class="filter-icon">📐</span>
+                            <span class="filter-label">Solares</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p>Encuentra tu hogar ideal en las mejores ubicaciones</p>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="client-main">
+        <!-- Mapa de Propiedades -->
+        <section class="map-section">
+            <div id="map"></div>
+        </section>
+
+        <!-- Lista de Propiedades -->
+        <section class="properties-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="propertiesTitle">📋 Todas las Propiedades</h2>
+                    <div class="properties-count">
+                        <span id="propertiesCount">0</span> propiedades encontradas
+                    </div>
+                </div>
+                <div class="properties-grid" id="propertiesGrid">
+                    <div class="loading">Cargando propiedades...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="client-footer">
+        <div class="container">
+            <p>&copy; 2024 Inmobiliaria. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/client.js"></script>
+</body>
+</html>

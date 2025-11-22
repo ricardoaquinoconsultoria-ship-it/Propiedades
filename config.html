@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - Propiedades</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="admin-header">
+            <h1>⚙️ Configuración del Sistema</h1>
+            <nav>
+                <a href="index.html">🏪 Ver Tienda</a>
+                <a href="admin.html">📊 Panel Admin</a>
+                <button id="logoutBtn" class="btn-logout">🚪 Cerrar Sesión</button>
+            </nav>
+        </header>
+
+        <div class="admin-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <ul class="sidebar-menu">
+                    <li><a href="#api-keys" class="active">🔑 API Keys</a></li>
+                    <li><a href="#map-settings">🗺️ Configuración Mapa</a></li>
+                    <li><a href="#company-settings">🏢 Configuración Empresa</a></li>
+                    <li><a href="#appearance">🎨 Apariencia</a></li>
+                </ul>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="admin-main">
+                <!-- API Keys -->
+                <section id="api-keys" class="admin-section">
+                    <h2>🔑 Configuración de API Keys</h2>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Supabase URL:</label>
+                            <input type="text" id="supabaseUrl" value="https://vbimfwzxdafuqexsnvso.supabase.co" readonly>
+                            <small>URL de tu proyecto Supabase</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Supabase Anon Key:</label>
+                            <input type="password" id="supabaseKey" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." readonly>
+                            <small>Clave pública de Supabase</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Google Maps API Key:</label>
+                            <input type="password" id="googleMapsKey" placeholder="Ingresa tu API Key de Google Maps">
+                            <small>Opcional - Para mapas más detallados</small>
+                        </div>
+
+                        <button class="btn-primary" onclick="configManager.saveApiKeys()">Guardar API Keys</button>
+                    </div>
+                </section>
+
+                <!-- Configuración Mapa -->
+                <section id="map-settings" class="admin-section hidden">
+                    <h2>🗺️ Configuración del Mapa</h2>
+                    <div class="config-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Zoom por Defecto:</label>
+                                <input type="range" id="defaultZoom" min="1" max="20" value="13">
+                                <span id="zoomValue">13</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Centro del Mapa (Latitud):</label>
+                                <input type="number" id="mapCenterLat" step="any" value="18.7357">
+                            </div>
+                            <div class="form-group">
+                                <label>Centro del Mapa (Longitud):</label>
+                                <input type="number" id="mapCenterLng" step="any" value="-70.1627">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tipo de Mapa:</label>
+                            <select id="mapType">
+                                <option value="openstreetmap">OpenStreetMap (Gratuito)</option>
+                                <option value="google">Google Maps (Premium)</option>
+                                <option value="mapbox">Mapbox</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Mostrar controles de zoom:</label>
+                            <input type="checkbox" id="showZoomControls" checked>
+                        </div>
+
+                        <button class="btn-primary" onclick="configManager.saveMapSettings()">Guardar Configuración Mapa</button>
+                    </div>
+                </section>
+
+                <!-- Configuración Empresa -->
+                <section id="company-settings" class="admin-section hidden">
+                    <h2>🏢 Configuración de la Empresa</h2>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Nombre de la Empresa:</label>
+                            <input type="text" id="companyName" placeholder="Ej: Inmobiliaria Rodríguez">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Subdominio:</label>
+                            <input type="text" id="companySubdomain" placeholder="Ej: rodriguez">
+                            <small>Se usará en la URL: subdominio.tudominio.com</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email de contacto:</label>
+                            <input type="email" id="companyEmail" placeholder="contacto@empresa.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Teléfono:</label>
+                            <input type="tel" id="companyPhone" placeholder="+1 234 567 8900">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Descripción:</label>
+                            <textarea id="companyDescription" rows="4" placeholder="Descripción de tu empresa..."></textarea>
+                        </div>
+
+                        <button class="btn-primary" onclick="configManager.saveCompanySettings()">Guardar Configuración Empresa</button>
+                    </div>
+                </section>
+
+                <!-- Apariencia -->
+                <section id="appearance" class="admin-section hidden">
+                    <h2>🎨 Personalizar Apariencia</h2>
+                    <div class="config-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Color Primario:</label>
+                                <input type="color" id="primaryColor" value="#3498db">
+                            </div>
+                            <div class="form-group">
+                                <label>Color Secundario:</label>
+                                <input type="color" id="secondaryColor" value="#2c3e50">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tema:</label>
+                            <select id="themeSelect">
+                                <option value="light">Claro</option>
+                                <option value="dark">Oscuro</option>
+                                <option value="auto">Automático</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Logo de la Empresa:</label>
+                            <input type="file" id="companyLogo" accept="image/*">
+                            <div id="logoPreview" class="image-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Favicon:</label>
+                            <input type="file" id="faviconUpload" accept="image/x-icon,image/png">
+                        </div>
+
+                        <button class="btn-primary" onclick="configManager.saveAppearance()">Guardar Apariencia</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/config.js"></script>
+</body>
+</html>
