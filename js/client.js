@@ -11,12 +11,135 @@ class ModernClientManager {
     async init() {
         this.setupEventListeners();
         await this.initializeMap();
-        await this.loadProperties();
+        await this.loadPropertiesFromSupabase();
+    }
+
+    async loadPropertiesFromSupabase() {
+        try {
+            console.log('📡 Cargando propiedades desde Supabase...');
+            
+            const { data: properties, error } = await supabase
+                .from('properties')
+                .select('*')
+                .eq('status', 'disponible');
+
+            if (error) {
+                console.error('Error cargando propiedades:', error);
+                // Cargar datos de ejemplo si hay error
+                await this.loadExampleProperties();
+                return;
+            }
+
+            if (properties && properties.length > 0) {
+                this.properties = properties;
+                console.log(`✅ ${properties.length} propiedades cargadas desde Supabase`);
+            } else {
+                console.log('ℹ️ No hay propiedades en Supabase, cargando ejemplos...');
+                await this.loadExampleProperties();
+            }
+
+            this.filteredProperties = [...this.properties];
+            this.renderProperties();
+            this.updatePropertiesCount();
+            this.renderMapMarkers();
+            
+        } catch (error) {
+            console.error('Error:', error);
+            await this.loadExampleProperties();
+        }
+    }
+
+    async loadExampleProperties() {
+        // Propiedades de ejemplo por si Supabase falla
+        this.properties = [
+            {
+                id: 1,
+                title: "Hermosa Casa Familiar con Piscina",
+                type: "casa",
+                price: 350000,
+                location: {
+                    address: "Calle Principal #123, Santo Domingo Este",
+                    lat: 18.4855,
+                    lng: -69.8731
+                },
+                characteristics: {
+                    bedrooms: 4,
+                    bathrooms: 3,
+                    area: 220,
+                    parking: true,
+                    pool: true,
+                    garden: true
+                },
+                description: "Impresionante casa familiar ubicada en una zona residencial exclusiva. Cuenta con amplios espacios, diseño moderno y áreas verdes. Perfecta para familias que buscan comodidad y seguridad.",
+                images: [
+                    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600",
+                    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600",
+                    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600",
+                    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600",
+                    "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=600"
+                ],
+                status: "disponible"
+            },
+            {
+                id: 2,
+                title: "Apartamento de Lujo en Torre Moderna",
+                type: "apartamento",
+                price: 185000,
+                location: {
+                    address: "Av. George Washington #456, Malecón",
+                    lat: 18.4735,
+                    lng: -69.8904
+                },
+                characteristics: {
+                    bedrooms: 2,
+                    bathrooms: 2,
+                    area: 95,
+                    parking: true,
+                    pool: true,
+                    garden: false
+                },
+                description: "Elegante apartamento en torre de lujo con vista al mar. Incluye amenities premium: gimnasio, piscina infinity y seguridad 24/7. Ideal para ejecutivos o inversión.",
+                images: [
+                    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600",
+                    "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600",
+                    "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=600",
+                    "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=600",
+                    "https://images.unsplash.com/photo-1600607688966-a7a83a5c6cda?w=600"
+                ],
+                status: "disponible"
+            },
+            {
+                id: 3,
+                title: "Oficina Ejecutiva en Centro Financiero",
+                type: "oficina",
+                price: 220000,
+                location: {
+                    address: "Plaza Central, Piantini",
+                    lat: 18.4834,
+                    lng: -69.9526
+                },
+                characteristics: {
+                    bedrooms: 0,
+                    bathrooms: 2,
+                    area: 150,
+                    parking: true,
+                    pool: false,
+                    garden: false
+                },
+                description: "Oficina ejecutiva completamente equipada en el corazón del distrito financiero. Espacios modernos, recepción y áreas comunes de primera calidad.",
+                images: [
+                    "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600",
+                    "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600",
+                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600"
+                ],
+                status: "disponible"
+            }
+        ];
     }
 
     setupEventListeners() {
         // Botón admin
-        document.getElementById('adminAccessBtn')?.addEventListener('click', () => {
+        document.getElementById('adminAccessBtn').addEventListener('click', () => {
             this.showAdminModal();
         });
 
@@ -36,12 +159,12 @@ class ModernClientManager {
         const cancelBtn = document.getElementById('cancelAdminBtn');
         const submitBtn = document.getElementById('submitAdminBtn');
 
-        closeBtn?.addEventListener('click', () => this.hideAdminModal());
-        cancelBtn?.addEventListener('click', () => this.hideAdminModal());
-        submitBtn?.addEventListener('click', () => this.handleAdminLogin());
+        closeBtn.addEventListener('click', () => this.hideAdminModal());
+        cancelBtn.addEventListener('click', () => this.hideAdminModal());
+        submitBtn.addEventListener('click', () => this.handleAdminLogin());
         
         // Cerrar modal al hacer clic fuera
-        modal?.addEventListener('click', (e) => {
+        modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 this.hideAdminModal();
             }
@@ -50,17 +173,17 @@ class ModernClientManager {
 
     setupPropertyModal() {
         const closeBtn = document.getElementById('closePropertyModal');
-        closeBtn?.addEventListener('click', () => this.hidePropertyModal());
+        closeBtn.addEventListener('click', () => this.hidePropertyModal());
 
         const modal = document.getElementById('propertyModal');
-        modal?.addEventListener('click', (e) => {
+        modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 this.hidePropertyModal();
             }
         });
 
         // Botón de contacto
-        document.querySelector('.btn-contact')?.addEventListener('click', () => {
+        document.querySelector('.btn-contact').addEventListener('click', () => {
             alert('📞 Un agente se pondrá en contacto contigo pronto.');
         });
     }
@@ -71,7 +194,7 @@ class ModernClientManager {
         const options = document.querySelectorAll('.filter-option');
 
         // Toggle del dropdown
-        mainFilterBtn?.addEventListener('click', (e) => {
+        mainFilterBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             filterOptions.classList.toggle('hidden');
         });
@@ -102,20 +225,20 @@ class ModernClientManager {
     }
 
     showAdminModal() {
-        document.getElementById('adminModal')?.classList.remove('hidden');
+        document.getElementById('adminModal').classList.remove('hidden');
     }
 
     hideAdminModal() {
-        document.getElementById('adminModal')?.classList.add('hidden');
+        document.getElementById('adminModal').classList.add('hidden');
     }
 
     showPropertyModal(property) {
         this.updatePropertyModal(property);
-        document.getElementById('propertyModal')?.classList.remove('hidden');
+        document.getElementById('propertyModal').classList.remove('hidden');
     }
 
     hidePropertyModal() {
-        document.getElementById('propertyModal')?.classList.add('hidden');
+        document.getElementById('propertyModal').classList.add('hidden');
     }
 
     updatePropertyModal(property) {
@@ -196,130 +319,6 @@ class ModernClientManager {
         }
     }
 
-    async loadProperties() {
-        try {
-            // Propiedades de ejemplo con datos realistas
-            this.properties = [
-                {
-                    id: 1,
-                    title: "Hermosa Casa Familiar con Piscina",
-                    type: "casa",
-                    price: 350000,
-                    location: {
-                        address: "Calle Principal #123, Santo Domingo Este",
-                        lat: 18.4855,
-                        lng: -69.8731
-                    },
-                    characteristics: {
-                        bedrooms: 4,
-                        bathrooms: 3,
-                        area: 220,
-                        parking: true,
-                        pool: true,
-                        garden: true
-                    },
-                    description: "Impresionante casa familiar ubicada en una zona residencial exclusiva. Cuenta con amplios espacios, diseño moderno y áreas verdes. Perfecta para familias que buscan comodidad y seguridad.",
-                    images: [
-                        "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600",
-                        "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600",
-                        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600",
-                        "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600",
-                        "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=600"
-                    ]
-                },
-                {
-                    id: 2,
-                    title: "Apartamento de Lujo en Torre Moderna",
-                    type: "apartamento",
-                    price: 185000,
-                    location: {
-                        address: "Av. George Washington #456, Malecón",
-                        lat: 18.4735,
-                        lng: -69.8904
-                    },
-                    characteristics: {
-                        bedrooms: 2,
-                        bathrooms: 2,
-                        area: 95,
-                        parking: true,
-                        pool: true,
-                        garden: false
-                    },
-                    description: "Elegante apartamento en torre de lujo con vista al mar. Incluye amenities premium: gimnasio, piscina infinity y seguridad 24/7. Ideal para ejecutivos o inversión.",
-                    images: [
-                        "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600",
-                        "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600",
-                        "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=600",
-                        "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=600",
-                        "https://images.unsplash.com/photo-1600607688966-a7a83a5c6cda?w=600"
-                    ]
-                },
-                {
-                    id: 3,
-                    title: "Solar Comercial en Avenida Principal",
-                    type: "solar",
-                    price: 120000,
-                    location: {
-                        address: "Av. 27 de Febrero #789, Santo Domingo",
-                        lat: 18.4555,
-                        lng: -69.9394
-                    },
-                    characteristics: {
-                        bedrooms: 0,
-                        bathrooms: 0,
-                        area: 650,
-                        parking: false,
-                        pool: false,
-                        garden: false
-                    },
-                    description: "Excelente oportunidad de inversión. Solar comercial en una de las avenidas más transitadas de la ciudad. Perfecto para construcción de negocio o desarrollo comercial.",
-                    images: [
-                        "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600",
-                        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600",
-                        "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600",
-                        "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600",
-                        "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600"
-                    ]
-                },
-                {
-                    id: 4,
-                    title: "Oficina Ejecutiva en Centro Financiero",
-                    type: "oficina",
-                    price: 220000,
-                    location: {
-                        address: "Plaza Central, Piantini",
-                        lat: 18.4834,
-                        lng: -69.9526
-                    },
-                    characteristics: {
-                        bedrooms: 0,
-                        bathrooms: 2,
-                        area: 150,
-                        parking: true,
-                        pool: false,
-                        garden: false
-                    },
-                    description: "Oficina ejecutiva completamente equipada en el corazón del distrito financiero. Espacios modernos, recepción y áreas comunes de primera calidad.",
-                    images: [
-                        "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600",
-                        "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600",
-                        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600",
-                        "https://images.unsplash.com/photo-1541745537411-b8046dc6d66c?w=600",
-                        "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600"
-                    ]
-                }
-            ];
-            
-            this.filteredProperties = [...this.properties];
-            this.renderProperties();
-            this.updatePropertiesCount();
-            this.renderMapMarkers();
-            
-        } catch (error) {
-            console.error('Error cargando propiedades:', error);
-        }
-    }
-
     renderMapMarkers() {
         // Limpiar marcadores anteriores
         this.markers.forEach(marker => this.map.removeLayer(marker));
@@ -327,7 +326,7 @@ class ModernClientManager {
 
         this.filteredProperties.forEach(property => {
             const customIcon = L.divIcon({
-                html: `<div class="custom-marker">🏠</div>`,
+                html: `<div style="background: #2563eb; color: white; padding: 8px; border-radius: 50%; font-size: 16px;">🏠</div>`,
                 className: 'property-marker',
                 iconSize: [40, 40]
             });
@@ -335,12 +334,12 @@ class ModernClientManager {
             const marker = L.marker([property.location.lat, property.location.lng], { icon: customIcon })
                 .addTo(this.map)
                 .bindPopup(`
-                    <div class="map-popup">
-                        <img src="${property.images[0]}" alt="${property.title}" style="width: 200px; height: 120px; object-fit: cover; border-radius: 8px;">
-                        <h4>${property.title}</h4>
-                        <p><strong>$${property.price.toLocaleString()}</strong></p>
-                        <button onclick="clientManager.showPropertyModal(${property.id})" 
-                                style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; width: 100%;">
+                    <div style="min-width: 200px;">
+                        <img src="${property.images[0]}" alt="${property.title}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
+                        <h4 style="margin: 8px 0;">${property.title}</h4>
+                        <p style="margin: 4px 0;"><strong>$${property.price.toLocaleString()}</strong></p>
+                        <button onclick="clientManager.showPropertyDetails(${property.id})" 
+                                style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 8px;">
                             Ver Detalles
                         </button>
                     </div>
@@ -407,7 +406,7 @@ class ModernClientManager {
         }
 
         container.innerHTML = this.filteredProperties.map(property => `
-            <div class="property-card" onclick="clientManager.showPropertyModal(${property.id})">
+            <div class="property-card" onclick="clientManager.showPropertyDetails(${property.id})">
                 <div class="property-image">
                     <img src="${property.images[0]}" alt="${property.title}">
                     <div class="property-badge">${this.getTypeLabel(property.type)}</div>
@@ -431,7 +430,7 @@ class ModernClientManager {
     }
 
     // Método para mostrar propiedad por ID
-    showPropertyModal(propertyId) {
+    showPropertyDetails(propertyId) {
         const property = this.properties.find(p => p.id === propertyId);
         if (property) {
             this.showPropertyModal(property);
@@ -441,10 +440,6 @@ class ModernClientManager {
 
 // Inicializar la aplicación
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('✅ Client Manager inicializado');
     window.clientManager = new ModernClientManager();
 });
-
-// Configuración de Supabase
-const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
