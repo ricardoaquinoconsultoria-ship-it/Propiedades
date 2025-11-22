@@ -121,29 +121,23 @@ class AdminManager {
 
             console.log('📤 Enviando propiedad a Supabase...', formData);
 
-            // Subir a Supabase
-            const { data, error } = await window.supabase
+            // **CORRECCIÓN: Versión simplificada sin .select()**
+            const { error } = await window.supabase
                 .from('properties')
-                .insert([formData])
-                .select();
+                .insert([formData]);  // Solo insert, sin .select()
 
             if (error) {
                 throw new Error(error.message);
             }
 
-            // Éxito
-            if (data && data.length > 0) {
-                this.properties.unshift(data[0]);
-                this.updateDashboard();
-                this.renderPropertiesList();
-                
-                alert('✅ Propiedad agregada exitosamente!');
-                this.resetForm();
-                
-                // Cambiar a la sección de propiedades
-                this.showSection('properties');
-                this.updateActiveNav('properties');
-            }
+            // Si no hay error, fue exitoso - recargar propiedades
+            alert('✅ Propiedad agregada exitosamente!');
+            await this.loadPropertiesFromSupabase();
+            this.resetForm();
+            
+            // Cambiar a la sección de propiedades
+            this.showSection('properties');
+            this.updateActiveNav('properties');
 
         } catch (error) {
             console.error('Error agregando propiedad:', error);
