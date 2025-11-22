@@ -1,4 +1,3 @@
-/* ===== ESTILOS GENERALES ===== */
 * {
     margin: 0;
     padding: 0;
@@ -12,17 +11,11 @@ body {
     background: #f8f9fa;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
 .hidden {
     display: none !important;
 }
 
-/* ===== BOTÓN FLOTANTE ADMIN ===== */
+/* Botón flotante admin */
 .admin-floating-btn {
     position: fixed;
     top: 20px;
@@ -48,7 +41,7 @@ body {
     background: #3498db;
 }
 
-/* ===== MODAL DE ADMINISTRADOR ===== */
+/* Modal */
 .modal {
     position: fixed;
     top: 0;
@@ -62,14 +55,9 @@ body {
     z-index: 10000;
 }
 
-.modal.hidden {
-    display: none;
-}
-
 .modal-content {
     background: white;
     border-radius: 15px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
     width: 90%;
     max-width: 400px;
     overflow: hidden;
@@ -84,60 +72,114 @@ body {
     align-items: center;
 }
 
-.modal-header h3 {
-    margin: 0;
-    font-size: 1.3rem;
-}
-
-.close-modal {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.close-modal:hover {
-    background: rgba(255,255,255,0.2);
-    border-radius: 50%;
-}
-
 .modal-body {
     padding: 2rem;
 }
 
-.modal-body p {
-    margin-bottom: 1.5rem;
-    color: #555;
-    text-align: center;
+/* Header principal */
+.client-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+    padding: 2rem 0;
 }
 
-.modal-body input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #e1e4e8;
-    border-radius: 8px;
-    font-size: 1rem;
-    margin-bottom: 1.5rem;
-    transition: border-color 0.3s ease;
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
 }
 
-.modal-body input:focus {
-    outline: none;
-    border-color: #3498db;
-}
-
-.modal-buttons {
+.header-main {
     display: flex;
-    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
 }
 
+/* Filtros */
+.properties-filter {
+    position: relative;
+}
+
+.filter-btn {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-dropdown {
+    position: absolute;
+    top: 100%;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin-top: 10px;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.filter-option {
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.filter-option:hover {
+    background: #3498db;
+    color: white;
+}
+
+/* Mapa */
+.map-section {
+    height: 500px;
+    margin: 2rem 0;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+}
+
+/* Grid de propiedades */
+.properties-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.property-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.property-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.property-info {
+    padding: 1.5rem;
+}
+
+.property-price {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #27ae60;
+    margin: 0.5rem 0;
+}
+
+/* Botones */
 .btn-primary {
     background: #3498db;
     color: white;
@@ -146,8 +188,6 @@ body {
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
-    transition: background 0.3s ease;
-    flex: 1;
 }
 
 .btn-primary:hover {
@@ -161,396 +201,16 @@ body {
     padding: 12px 25px;
     border-radius: 8px;
     cursor: pointer;
-    font-weight: 600;
-    transition: background 0.3s ease;
-    flex: 1;
 }
 
-.btn-secondary:hover {
-    background: #7f8c8d;
-}
-
-/* ===== HEADER ===== */
-.client-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-    color: white;
-    padding: 2rem 0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.header-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-.header-main {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-}
-
-.client-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-}
-
-.client-header p {
-    font-size: 1.1rem;
-    opacity: 0.9;
-}
-
-/* ===== FILTRO DE PROPIEDADES ===== */
-.properties-filter {
-    position: relative;
-    display: inline-block;
-    z-index: 100;
-}
-
-.filter-btn {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-    min-width: 220px;
-    justify-content: space-between;
-}
-
-.filter-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-}
-
-.filter-btn.active {
-    background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
-}
-
-.filter-arrow {
-    font-size: 0.8rem;
-    transition: transform 0.3s ease;
-}
-
-.filter-btn.active .filter-arrow {
-    transform: rotate(180deg);
-}
-
-.filter-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    margin-top: 10px;
-    z-index: 1000;
-    overflow: hidden;
-    border: 2px solid #3498db;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.3s ease;
-}
-
-.filter-dropdown:not(.hidden) {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-.filter-option {
-    padding: 15px 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border-bottom: 1px solid #f1f1f1;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.filter-option:last-child {
-    border-bottom: none;
-}
-
-.filter-option:hover {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    color: white;
-    transform: translateX(5px);
-}
-
-.filter-option.active {
-    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-    color: white;
-    font-weight: 600;
-}
-
-.filter-icon {
-    font-size: 1.2rem;
-    width: 24px;
-    text-align: center;
-    flex-shrink: 0;
-}
-
-/* 🔥 SOLUCIÓN DEFINITIVA PARA EL TEXTO DEL FILTRO */
-.filter-label {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    font-size: 1rem;
-    color: #2c3e50;
-    font-weight: normal;
-}
-
-.filter-option:hover .filter-label {
-    color: white !important;
-}
-
-.filter-option.active .filter-label {
-    color: white !important;
-}
-
-.filter-text {
-    display: inline !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* ===== MAPA ===== */
-.map-section {
-    height: 500px;
-    margin: 2rem 0;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-#map {
-    height: 100%;
-    width: 100%;
-    border-radius: 15px;
-}
-
-/* ===== SECCIÓN DE PROPIEDADES ===== */
-.properties-section {
-    padding: 3rem 0;
-    background: white;
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.section-header h2 {
-    color: #2c3e50;
-    font-size: 2rem;
-    margin: 0;
-}
-
-.properties-count {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 25px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-/* ===== GRID DE PROPIEDADES ===== */
-.properties-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2rem;
-}
-
-.property-card {
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    border: 1px solid #e1e4e8;
-}
-
-.property-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-}
-
-.property-image {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-}
-
-.property-info {
-    padding: 1.5rem;
-}
-
-.property-info h3 {
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
-    font-size: 1.3rem;
-}
-
-.property-price {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #27ae60;
-    margin-bottom: 1rem;
-}
-
-.property-features {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-}
-
-.property-features span {
-    background: #f8f9fa;
-    padding: 5px 10px;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    color: #555;
-}
-
-.property-address {
-    color: #7f8c8d;
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
-}
-
-.property-type {
-    padding: 5px 10px;
-    background: #3498db;
-    color: white;
-    border-radius: 15px;
-    display: inline-block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-}
-
-.view-map-btn {
-    width: 100%;
-    padding: 10px;
-    background: #2c3e50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background 0.3s ease;
-}
-
-.view-map-btn:hover {
-    background: #3498db;
-}
-
-/* ===== ESTADOS ESPECIALES ===== */
-.no-properties, .error-message {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 3rem;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.no-properties-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.loading {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-    color: #7f8c8d;
-}
-
-/* ===== FOOTER ===== */
-.client-footer {
-    background: #2c3e50;
-    color: white;
-    text-align: center;
-    padding: 2rem 0;
-    margin-top: 3rem;
-}
-
-/* ===== RESPONSIVE ===== */
+/* Responsive */
 @media (max-width: 768px) {
     .header-main {
         flex-direction: column;
         gap: 1rem;
-        text-align: center;
-    }
-    
-    .properties-filter {
-        width: 100%;
-    }
-    
-    .filter-btn {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .section-header {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .properties-count {
-        align-self: center;
     }
     
     .properties-grid {
         grid-template-columns: 1fr;
     }
-    
-    .client-header h1 {
-        font-size: 2rem;
-    }
-    
-    .modal-buttons {
-        flex-direction: column;
-    }
 }
-
-/* 🔥 GARANTÍA EXTRA - Forzar visibilidad del texto */
-.filter-option span:not(.filter-icon) {
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    font-size: 1rem !important;
-    color: #2c3e50 !important;
-}
-
-.filter-option:hover span:not(.filter-icon) {
-    color: white !important;
-}
-
-.filter-option.active span:not(.filter-icon) {
-    color: white !important;
-  }
