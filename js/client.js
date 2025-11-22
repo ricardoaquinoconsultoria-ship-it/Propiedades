@@ -10,25 +10,28 @@ class ModernClientManager {
 
     async init() {
         console.log('🚀 Inicializando ModernClientManager...');
-        console.log('📊 Estado Supabase:', window.checkSupabaseStatus() ? 'REAL' : 'LOCAL');
-        
-        this.setupEventListeners();
-        await this.initializeMap();
-        await this.loadProperties();
+        try {
+            this.setupEventListeners();
+            await this.initializeMap();
+            await this.loadProperties();
+        } catch (error) {
+            console.error('❌ Error en init:', error);
+        }
     }
 
     async loadProperties() {
         try {
             console.log('📡 Cargando propiedades...');
             
-            const loadedProperties = await this.loadFromDataSource();
+            // Cargar desde localStorage primero
+            const localProperties = this.getLocalProperties();
             
-            if (loadedProperties && loadedProperties.length > 0) {
-                console.log(`✅ ${loadedProperties.length} propiedades cargadas`);
-                this.properties = loadedProperties;
+            if (localProperties && localProperties.length > 0) {
+                console.log(`✅ ${localProperties.length} propiedades cargadas desde localStorage`);
+                this.properties = localProperties;
             } else {
-                console.log('ℹ️ No hay propiedades guardadas');
-                // No cargar ejemplos automáticamente, dejar vacío
+                console.log('📝 Cargando propiedades de ejemplo');
+                await this.loadExampleProperties();
             }
 
             this.applyFilter('all');
@@ -36,38 +39,76 @@ class ModernClientManager {
             
         } catch (error) {
             console.error('❌ Error cargando propiedades:', error);
-            // No cargar ejemplos en caso de error
+            await this.loadExampleProperties();
         }
     }
 
-    async loadFromDataSource() {
+    getLocalProperties() {
         try {
-            console.log('🔍 Cargando desde fuente de datos...');
-            
-            if (!window.supabase) {
-                console.log('❌ Cliente no disponible');
-                return null;
-            }
-
-            // Usar el método que funcione según el modo
-            const { data: properties, error } = await window.supabase
-                .from('properties')
-                .select('*')
-                .eq('status', 'disponible')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('❌ Error cargando datos:', error);
-                return null;
-            }
-
-            console.log('📊 Datos cargados:', properties);
-            return properties;
-
+            const properties = localStorage.getItem('inmobiliaria_properties');
+            return properties ? JSON.parse(properties) : [];
         } catch (error) {
-            console.error('❌ Error en carga de datos:', error);
-            return null;
+            console.error('Error leyendo localStorage:', error);
+            return [];
         }
+    }
+
+    async loadExampleProperties() {
+        console.log('🔄 Cargando propiedades de ejemplo...');
+        this.properties = [
+            {
+                id: 1,
+                title: "Hermosa Casa Familiar con Piscina",
+                type: "casa",
+                price: 350000,
+                location: {
+                    address: "Calle Principal #123, Santo Domingo Este",
+                    lat: 18.4855,
+                    lng: -69.8731
+                },
+                characteristics: {
+                    bedrooms: 4,
+                    bathrooms: 3,
+                    area: 220,
+                    parking: true,
+                    pool: true,
+                    garden: true
+                },
+                description: "Impresionante casa familiar ubicada en una zona residencial exclusiva.",
+                images: [
+                    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600"
+                ],
+                status: "disponible",
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 2,
+                title: "Apartamento de Lujo en Torre Moderna",
+                type: "apartamento",
+                price: 185000,
+                location: {
+                    address: "Av. George Washington #456, Malecón",
+                    lat: 18.4735,
+                    lng: -69.8904
+                },
+                characteristics: {
+                    bedrooms: 2,
+                    bathrooms: 2,
+                    area: 95,
+                    parking: true,
+                    pool: true,
+                    garden: false
+                },
+                description: "Elegante apartamento en torre de lujo con vista al mar.",
+                images: [
+                    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600"
+                ],
+                status: "disponible",
+                created_at: new Date().toISOString()
+            }
+        ];
+        
+        console.log(`✅ ${this.properties.length} propiedades de ejemplo cargadas`);
     }
 
     setupEventListeners() {
@@ -89,65 +130,14 @@ class ModernClientManager {
         
         // Filtros
         this.setupFilters();
-        
-        // Botón para recargar propiedades
-        this.addReloadButton();
-        
-        // Botón para limpiar datos (solo desarrollo)
-        this.addClearButton();
-    }
-
-    addReloadButton() {
-        const reloadBtn = document.createElement('button');
-        reloadBtn.innerHTML = '🔄 Actualizar';
-        reloadBtn.title = 'Recargar propiedades';
-        reloadBtn.style.position = 'fixed';
-        reloadBtn.style.bottom = '70px';
-        reloadBtn.style.right = '20px';
-        reloadBtn.style.zIndex = '1000';
-        reloadBtn.style.background = '#2563eb';
-        reloadBtn.style.color = 'white';
-        reloadBtn.style.border = 'none';
-        reloadBtn.style.padding = '10px 15px';
-        reloadBtn.style.borderRadius = '8px';
-        reloadBtn.style.cursor = 'pointer';
-        reloadBtn.style.fontSize = '14px';
-        reloadBtn.addEventListener('click', () => {
-            this.loadProperties();
-        });
-        document.body.appendChild(reloadBtn);
-    }
-
-    addClearButton() {
-        // Solo para desarrollo - eliminar en producción
-        const clearBtn = document.createElement('button');
-        clearBtn.innerHTML = '🗑️ Limpiar';
-        clearBtn.title = 'Limpiar datos locales (solo desarrollo)';
-        clearBtn.style.position = 'fixed';
-        clearBtn.style.bottom = '20px';
-        clearBtn.style.right = '20px';
-        clearBtn.style.zIndex = '1000';
-        clearBtn.style.background = '#dc2626';
-        clearBtn.style.color = 'white';
-        clearBtn.style.border = 'none';
-        clearBtn.style.padding = '10px 15px';
-        clearBtn.style.borderRadius = '8px';
-        clearBtn.style.cursor = 'pointer';
-        clearBtn.style.fontSize = '14px';
-        clearBtn.addEventListener('click', () => {
-            if (confirm('¿Limpiar todos los datos locales? (Solo desarrollo)')) {
-                localStorage.clear();
-                this.properties = [];
-                this.applyFilter('all');
-                alert('Datos locales limpiados');
-            }
-        });
-        document.body.appendChild(clearBtn);
     }
 
     setupAdminModal() {
         const modal = document.getElementById('adminModal');
-        if (!modal) return;
+        if (!modal) {
+            console.log('❌ Modal admin no encontrado');
+            return;
+        }
 
         const closeBtn = document.getElementById('closeAdminModal');
         const cancelBtn = document.getElementById('cancelAdminBtn');
@@ -192,7 +182,10 @@ class ModernClientManager {
         const filterOptions = document.getElementById('filterOptions');
         const options = document.querySelectorAll('.filter-option');
 
-        if (!mainFilterBtn || !filterOptions) return;
+        if (!mainFilterBtn || !filterOptions) {
+            console.log('❌ Elementos de filtro no encontrados');
+            return;
+        }
 
         mainFilterBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -221,7 +214,10 @@ class ModernClientManager {
 
     showAdminModal() {
         const modal = document.getElementById('adminModal');
-        if (modal) modal.classList.remove('hidden');
+        if (modal) {
+            modal.classList.remove('hidden');
+            console.log('🔓 Modal admin abierto');
+        }
     }
 
     hideAdminModal() {
@@ -388,8 +384,6 @@ class ModernClientManager {
             } catch (error) {
                 console.error('Error ajustando mapa:', error);
             }
-        } else {
-            console.log('ℹ️ No hay propiedades para mostrar en el mapa');
         }
     }
 
@@ -446,14 +440,6 @@ class ModernClientManager {
                 <div class="no-properties" style="grid-column: 1/-1; text-align: center; padding: 60px; color: #64748b;">
                     <h3>🏠 No hay propiedades disponibles</h3>
                     <p>Agrega propiedades desde el panel de administración</p>
-                    <div style="margin-top: 1rem;">
-                        <button onclick="clientManager.loadProperties()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin: 0.5rem;">
-                            🔄 Recargar
-                        </button>
-                        <button onclick="clientManager.showAdminModal()" style="background: #f59e0b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin: 0.5rem;">
-                            ⚙️ Ir al Admin
-                        </button>
-                    </div>
                 </div>
             `;
             return;
