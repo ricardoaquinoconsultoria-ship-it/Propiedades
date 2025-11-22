@@ -10,8 +10,190 @@ class AdminManager {
     async init() {
         this.setupEventListeners();
         await this.initializeLocationMap();
-        await this.loadProperties();
+        await this.loadPropertiesFromSupabase();
         this.setupImageUpload();
+    }
+
+    async loadPropertiesFromSupabase() {
+        try {
+            console.log('📡 Cargando propiedades desde Supabase...');
+            
+            const { data: properties, error } = await supabase
+                .from('properties')
+                .select('*');
+
+            if (error) {
+                console.error('Error cargando propiedades:', error);
+                alert('Error cargando propiedades: ' + error.message);
+                return;
+            }
+
+            if (properties) {
+                this.properties = properties;
+                console.log(`✅ ${properties.length} propiedades cargadas desde Supabase`);
+            } else {
+                this.properties = [];
+                console.log('ℹ️ No hay propiedades en Supabase');
+            }
+            
+            this.updateDashboard();
+            this.renderPropertiesList();
+            
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    async handleAddProperty() {
+        try {
+            const formData = {
+                title: document.getElementById('propertyTitle').value,
+                type: document.getElementById('propertyType').value,
+                price: parseFloat(document.getElementById('propertyPrice').value),
+                description: document.getElementById('propertyDescription').value,
+                location: {
+                    address: document.getElementById('propertyAddress').value,
+                    lat: parseFloat(document.getElementById('propertyLat').value),
+                    lng: parseFloat(document.getElementById('propertyLng').value)
+                },
+                characteristics: {
+                    bedrooms: parseInt(document.getElementById('propertyBedrooms').value) || 0,
+                    bathrooms: parseInt(document.getElementById('propertyBathrooms').value) || 0,
+                    area: parseInt(document.getElementById('propertyArea').value),
+                    parking: document.getElementById('propertyParking').checked,
+                    pool: document.getElementById('propertyPool').checked,
+                    garden: document.getElementById('propertyGarden').checked
+                },
+                status: 'disponible',
+                images: this.selectedImages.map(img => img.src)
+            };
+
+            // Validaciones básicas
+            if (!formData.title || !formData.type || !formData.price || !formData.location.address) {
+                alert('❌ Por favor completa todos los campos requeridos');
+                return;
+            }
+
+            if (formData.price <= 0) {
+                alert('❌ El precio debe ser mayor a 0');
+                return;
+            }
+
+            console.log('📤 Enviando propiedad a Supabase...', formData);
+
+            // Subir a Supabase
+            const { data, error } = await supabase
+                .from('properties')
+                .insert([formData])
+                .select();
+
+            if (error) {
+                console.error('Error subiendo propiedad:', error);
+                alert('❌ Error al agregar la propiedad: ' + error.message);
+                return;
+            }
+
+            // Actualizar lista local
+            if (data && data.length > 0) {
+                this.properties.push(data[0]);
+                this.updateDashboard();
+                this.renderPropertiesList();
+                
+                alert('✅ Propiedad agregada exitosamente a Supabase!');
+                this.resetForm();
+                
+                // Cambiar a la sección de propiedades
+                this.showSection('properties');
+                document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#properties') {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('Error agregando propiedad:', error);
+            alert('❌ Error al agregar la propiedad');
+        }
+    }
+
+    async deleteProperty(propertyId) {
+        if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
+            try {
+                const { error } = await supabase
+                    .from('properties')
+                    .delete()
+                    .eq('id', propertyId);
+
+                if (error) {
+                    alert('❌ Error eliminando propiedad: ' + error.message);
+                    return;
+                }
+
+                // Actualizar lista local
+                this.properties = this.properties.filter(p => p.id !== propertyId);
+                this.updateDashboard();
+                this.renderPropertiesList();
+                alert('🗑️ Propiedad eliminada exitosamente de Supabase');
+
+            } catch (error) {
+                console.error('Error eliminando propiedad:', error);
+                alert('❌ Error al eliminar la propiedad');
+            }
+        }
+    }
+
+    async editProperty(propertyId) {
+        const property = this.properties.find(p => p.id === propertyId);
+        if (property) {
+            // Llenar formulario con datos
+            document.getElementById('propertyTitle').value = property.title;
+            document.getElementById('propertyType').value = property.type;
+            document.getElementById('propertyPrice').value = property.price;
+            document.getElementById('propertyDescription').value = property.description;
+            document.getElementById('propertyAddress').value = property.location.address;
+            document.getElementById('propertyBedrooms').value = property.characteristics.bedrooms;
+            document.getElementById('propertyBathrooms').value = property.characteristics.bathrooms;
+            document.getElementById('propertyArea').value = property.characteristics.area;
+            document.getElementById('propertyParking').checked = property.characteristics.parking;
+            document.getElementById('propertyPool').checked = property.characteristics.pool;
+            document.getElementById('propertyGarden').checked = property.characteristics.garden;
+
+            // Actualizar mapa
+            if (this.locationMarker) {
+                this.locationMap.removeLayer(this.locationMarker);
+                this.locationMarker = L.marker([property.location.lat, property.location.lng])
+                    .addTo(this.locationMap)
+                    .bindPopup('Ubicación de la propiedad');
+                
+                this.locationMap.setView([property.location.lat, property.location.lng], 15);
+                
+                document.getElementById('propertyLat').value = property.location.lat;
+                document.getElementById('propertyLng').value = property.location.lng;
+                document.getElementById('selectedCoordinates').textContent = 
+                    `Lat: ${property.location.lat.toFixed(4)}, Lng: ${property.location.lng.toFixed(4)}`;
+            }
+
+            // Cargar imágenes
+            this.selectedImages = property.images.map((src, index) => ({
+                id: index,
+                src: src,
+                file: null
+            }));
+            this.updateImagePreview();
+
+            // Cambiar a sección de agregar propiedad
+            this.showSection('add-property');
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#add-property') {
+                    link.classList.add('active');
+                }
+            });
+
+            alert('✏️ Modo edición activado para: ' + property.title);
+        }
     }
 
     setupEventListeners() {
@@ -191,58 +373,6 @@ class AdminManager {
         this.updateImagePreview();
     }
 
-    async loadProperties() {
-        try {
-            // Cargar propiedades desde localStorage o usar datos de ejemplo
-            const savedProperties = localStorage.getItem('adminProperties');
-            
-            if (savedProperties) {
-                this.properties = JSON.parse(savedProperties);
-            } else {
-                // Datos de ejemplo
-                this.properties = [
-                    {
-                        id: 1,
-                        title: "Casa de ejemplo en zona residencial",
-                        type: "casa",
-                        price: 150000,
-                        status: "disponible",
-                        location: {
-                            address: "Calle Principal #123, Santo Domingo",
-                            lat: 18.7357,
-                            lng: -70.1627
-                        },
-                        characteristics: {
-                            bedrooms: 3,
-                            bathrooms: 2,
-                            area: 120,
-                            parking: true,
-                            pool: false,
-                            garden: true
-                        },
-                        description: "Una casa espaciosa con jardín, perfecta para familias. Cuenta con amplios espacios y buena iluminación natural.",
-                        images: [
-                            "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400",
-                            "https://images.unsplash.com/photo-1494526585095-c41746248156?w=400",
-                            "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=400"
-                        ]
-                    }
-                ];
-                this.saveProperties();
-            }
-            
-            this.updateDashboard();
-            this.renderPropertiesList();
-            
-        } catch (error) {
-            console.error('Error cargando propiedades:', error);
-        }
-    }
-
-    saveProperties() {
-        localStorage.setItem('adminProperties', JSON.stringify(this.properties));
-    }
-
     updateDashboard() {
         document.getElementById('totalProperties').textContent = this.properties.length;
         document.getElementById('availableProperties').textContent = 
@@ -298,76 +428,6 @@ class AdminManager {
         return types[type] || type;
     }
 
-    async handleAddProperty() {
-        try {
-            const formData = {
-                title: document.getElementById('propertyTitle').value,
-                type: document.getElementById('propertyType').value,
-                price: parseFloat(document.getElementById('propertyPrice').value),
-                description: document.getElementById('propertyDescription').value,
-                location: {
-                    address: document.getElementById('propertyAddress').value,
-                    lat: parseFloat(document.getElementById('propertyLat').value),
-                    lng: parseFloat(document.getElementById('propertyLng').value)
-                },
-                characteristics: {
-                    bedrooms: parseInt(document.getElementById('propertyBedrooms').value) || 0,
-                    bathrooms: parseInt(document.getElementById('propertyBathrooms').value) || 0,
-                    area: parseInt(document.getElementById('propertyArea').value),
-                    parking: document.getElementById('propertyParking').checked,
-                    pool: document.getElementById('propertyPool').checked,
-                    garden: document.getElementById('propertyGarden').checked
-                },
-                status: 'disponible',
-                images: this.selectedImages.map(img => img.src)
-            };
-
-            // Validaciones básicas
-            if (!formData.title || !formData.type || !formData.price || !formData.location.address) {
-                alert('❌ Por favor completa todos los campos requeridos');
-                return;
-            }
-
-            if (formData.price <= 0) {
-                alert('❌ El precio debe ser mayor a 0');
-                return;
-            }
-
-            // Crear nueva propiedad
-            const newProperty = {
-                id: Date.now(), // ID único
-                ...formData
-            };
-
-            // Agregar a la lista
-            this.properties.push(newProperty);
-            this.saveProperties();
-
-            // Actualizar UI
-            this.updateDashboard();
-            this.renderPropertiesList();
-
-            // Mostrar mensaje de éxito
-            alert('✅ Propiedad agregada exitosamente!');
-
-            // Limpiar formulario
-            this.resetForm();
-
-            // Cambiar a la sección de propiedades
-            this.showSection('properties');
-            document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === '#properties') {
-                    link.classList.add('active');
-                }
-            });
-
-        } catch (error) {
-            console.error('Error agregando propiedad:', error);
-            alert('❌ Error al agregar la propiedad');
-        }
-    }
-
     resetForm() {
         document.getElementById('propertyForm').reset();
         this.selectedImages = [];
@@ -386,76 +446,10 @@ class AdminManager {
                 'Lat: 18.7357, Lng: -70.1627';
         }
     }
-
-    editProperty(propertyId) {
-        const property = this.properties.find(p => p.id === propertyId);
-        if (property) {
-            // Llenar formulario con datos de la propiedad
-            document.getElementById('propertyTitle').value = property.title;
-            document.getElementById('propertyType').value = property.type;
-            document.getElementById('propertyPrice').value = property.price;
-            document.getElementById('propertyDescription').value = property.description;
-            document.getElementById('propertyAddress').value = property.location.address;
-            document.getElementById('propertyBedrooms').value = property.characteristics.bedrooms;
-            document.getElementById('propertyBathrooms').value = property.characteristics.bathrooms;
-            document.getElementById('propertyArea').value = property.characteristics.area;
-            document.getElementById('propertyParking').checked = property.characteristics.parking;
-            document.getElementById('propertyPool').checked = property.characteristics.pool;
-            document.getElementById('propertyGarden').checked = property.characteristics.garden;
-
-            // Actualizar mapa
-            if (this.locationMarker) {
-                this.locationMap.removeLayer(this.locationMarker);
-                this.locationMarker = L.marker([property.location.lat, property.location.lng])
-                    .addTo(this.locationMap)
-                    .bindPopup('Ubicación de la propiedad');
-                
-                this.locationMap.setView([property.location.lat, property.location.lng], 15);
-                
-                document.getElementById('propertyLat').value = property.location.lat;
-                document.getElementById('propertyLng').value = property.location.lng;
-                document.getElementById('selectedCoordinates').textContent = 
-                    `Lat: ${property.location.lat.toFixed(4)}, Lng: ${property.location.lng.toFixed(4)}`;
-            }
-
-            // Cargar imágenes
-            this.selectedImages = property.images.map((src, index) => ({
-                id: index,
-                src: src,
-                file: null
-            }));
-            this.updateImagePreview();
-
-            // Cambiar a sección de agregar propiedad
-            this.showSection('add-property');
-            document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === '#add-property') {
-                    link.classList.add('active');
-                }
-            });
-
-            alert('✏️ Modo edición activado para: ' + property.title);
-        }
-    }
-
-    deleteProperty(propertyId) {
-        if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
-            this.properties = this.properties.filter(p => p.id !== propertyId);
-            this.saveProperties();
-            this.updateDashboard();
-            this.renderPropertiesList();
-            alert('🗑️ Propiedad eliminada exitosamente');
-        }
-    }
 }
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('✅ Admin Manager inicializado');
     window.adminManager = new AdminManager();
 });
-
-// Configuración de Supabase
-const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
