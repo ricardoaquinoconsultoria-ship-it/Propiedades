@@ -8,6 +8,7 @@ class AdminManager {
     }
 
     async init() {
+        console.log('🔄 Inicializando AdminManager...');
         this.setupEventListeners();
         await this.initializeLocationMap();
         await this.loadPropertiesFromSupabase();
@@ -20,39 +21,43 @@ class AdminManager {
             
             const { data: properties, error } = await supabase
                 .from('properties')
-                .select('*');
+                .select('*')
+                .order('created_at', { ascending: false });
 
             if (error) {
                 console.error('Error cargando propiedades:', error);
-                alert('Error cargando propiedades: ' + error.message);
+                this.showError('Error cargando propiedades: ' + error.message);
                 return;
             }
 
-            if (properties) {
-                this.properties = properties;
-                console.log(`✅ ${properties.length} propiedades cargadas desde Supabase`);
-            } else {
-                this.properties = [];
-                console.log('ℹ️ No hay propiedades en Supabase');
-            }
-            
+            console.log('✅ Propiedades cargadas:', properties);
+            this.properties = properties || [];
             this.updateDashboard();
             this.renderPropertiesList();
             
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error crítico:', error);
+            this.showError('Error crítico al cargar propiedades');
         }
     }
 
     async handleAddProperty() {
+        const submitBtn = document.querySelector('.btn-submit');
+        const originalText = submitBtn.innerHTML;
+        
         try {
+            // Mostrar loading
+            submitBtn.innerHTML = '⏳ Guardando...';
+            submitBtn.disabled = true;
+
+            // Obtener datos del formulario
             const formData = {
-                title: document.getElementById('propertyTitle').value,
+                title: document.getElementById('propertyTitle').value.trim(),
                 type: document.getElementById('propertyType').value,
                 price: parseFloat(document.getElementById('propertyPrice').value),
-                description: document.getElementById('propertyDescription').value,
+                description: document.getElementById('propertyDescription').value.trim(),
                 location: {
-                    address: document.getElementById('propertyAddress').value,
+                    address: document.getElementById('propertyAddress').value.trim(),
                     lat: parseFloat(document.getElementById('propertyLat').value),
                     lng: parseFloat(document.getElementById('propertyLng').value)
                 },
@@ -65,17 +70,12 @@ class AdminManager {
                     garden: document.getElementById('propertyGarden').checked
                 },
                 status: 'disponible',
-                images: this.selectedImages.map(img => img.src)
+                images: this.selectedImages.map(img => img.src),
+                created_at: new Date().toISOString()
             };
 
-            // Validaciones básicas
-            if (!formData.title || !formData.type || !formData.price || !formData.location.address) {
-                alert('❌ Por favor completa todos los campos requeridos');
-                return;
-            }
-
-            if (formData.price <= 0) {
-                alert('❌ El precio debe ser mayor a 0');
+            // Validaciones
+            if (!this.validateForm(formData)) {
                 return;
             }
 
@@ -88,127 +88,82 @@ class AdminManager {
                 .select();
 
             if (error) {
-                console.error('Error subiendo propiedad:', error);
-                alert('❌ Error al agregar la propiedad: ' + error.message);
-                return;
+                throw new Error(error.message);
             }
 
-            // Actualizar lista local
+            // Éxito
             if (data && data.length > 0) {
-                this.properties.push(data[0]);
+                this.properties.unshift(data[0]);
                 this.updateDashboard();
                 this.renderPropertiesList();
                 
-                alert('✅ Propiedad agregada exitosamente a Supabase!');
+                alert('✅ Propiedad agregada exitosamente!');
                 this.resetForm();
                 
                 // Cambiar a la sección de propiedades
                 this.showSection('properties');
-                document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === '#properties') {
-                        link.classList.add('active');
-                    }
-                });
+                this.updateActiveNav('properties');
             }
 
         } catch (error) {
             console.error('Error agregando propiedad:', error);
-            alert('❌ Error al agregar la propiedad');
+            alert('❌ Error al agregar la propiedad: ' + error.message);
+        } finally {
+            // Restaurar botón
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         }
     }
 
-    async deleteProperty(propertyId) {
-        if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
-            try {
-                const { error } = await supabase
-                    .from('properties')
-                    .delete()
-                    .eq('id', propertyId);
-
-                if (error) {
-                    alert('❌ Error eliminando propiedad: ' + error.message);
-                    return;
-                }
-
-                // Actualizar lista local
-                this.properties = this.properties.filter(p => p.id !== propertyId);
-                this.updateDashboard();
-                this.renderPropertiesList();
-                alert('🗑️ Propiedad eliminada exitosamente de Supabase');
-
-            } catch (error) {
-                console.error('Error eliminando propiedad:', error);
-                alert('❌ Error al eliminar la propiedad');
-            }
+    validateForm(formData) {
+        if (!formData.title) {
+            alert('❌ El título es requerido');
+            return false;
         }
+        if (!formData.type) {
+            alert('❌ El tipo de propiedad es requerido');
+            return false;
+        }
+        if (!formData.price || formData.price <= 0) {
+            alert('❌ El precio debe ser mayor a 0');
+            return false;
+        }
+        if (!formData.description) {
+            alert('❌ La descripción es requerida');
+            return false;
+        }
+        if (!formData.location.address) {
+            alert('❌ La dirección es requerida');
+            return false;
+        }
+        if (!formData.area || formData.area <= 0) {
+            alert('❌ El área es requerida');
+            return false;
+        }
+        return true;
     }
 
-    async editProperty(propertyId) {
-        const property = this.properties.find(p => p.id === propertyId);
-        if (property) {
-            // Llenar formulario con datos
-            document.getElementById('propertyTitle').value = property.title;
-            document.getElementById('propertyType').value = property.type;
-            document.getElementById('propertyPrice').value = property.price;
-            document.getElementById('propertyDescription').value = property.description;
-            document.getElementById('propertyAddress').value = property.location.address;
-            document.getElementById('propertyBedrooms').value = property.characteristics.bedrooms;
-            document.getElementById('propertyBathrooms').value = property.characteristics.bathrooms;
-            document.getElementById('propertyArea').value = property.characteristics.area;
-            document.getElementById('propertyParking').checked = property.characteristics.parking;
-            document.getElementById('propertyPool').checked = property.characteristics.pool;
-            document.getElementById('propertyGarden').checked = property.characteristics.garden;
-
-            // Actualizar mapa
-            if (this.locationMarker) {
-                this.locationMap.removeLayer(this.locationMarker);
-                this.locationMarker = L.marker([property.location.lat, property.location.lng])
-                    .addTo(this.locationMap)
-                    .bindPopup('Ubicación de la propiedad');
-                
-                this.locationMap.setView([property.location.lat, property.location.lng], 15);
-                
-                document.getElementById('propertyLat').value = property.location.lat;
-                document.getElementById('propertyLng').value = property.location.lng;
-                document.getElementById('selectedCoordinates').textContent = 
-                    `Lat: ${property.location.lat.toFixed(4)}, Lng: ${property.location.lng.toFixed(4)}`;
+    updateActiveNav(section) {
+        document.querySelectorAll('.sidebar-menu a').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${section}`) {
+                link.classList.add('active');
             }
-
-            // Cargar imágenes
-            this.selectedImages = property.images.map((src, index) => ({
-                id: index,
-                src: src,
-                file: null
-            }));
-            this.updateImagePreview();
-
-            // Cambiar a sección de agregar propiedad
-            this.showSection('add-property');
-            document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === '#add-property') {
-                    link.classList.add('active');
-                }
-            });
-
-            alert('✏️ Modo edición activado para: ' + property.title);
-        }
+        });
     }
 
     setupEventListeners() {
-        // Navegación
         this.setupNavigation();
         
-        // Formulario de propiedad
         document.getElementById('propertyForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleAddProperty();
         });
 
-        // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            window.location.href = 'index.html';
+            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                window.location.href = 'index.html';
+            }
         });
     }
 
@@ -219,21 +174,16 @@ class AdminManager {
                 e.preventDefault();
                 const target = link.getAttribute('href').substring(1);
                 this.showSection(target);
-                
-                // Actualizar clase activa
-                menuLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
+                this.updateActiveNav(target);
             });
         });
     }
 
     showSection(sectionId) {
-        // Ocultar todas las secciones
         document.querySelectorAll('.admin-section').forEach(section => {
             section.classList.add('hidden');
         });
         
-        // Mostrar sección seleccionada
         const targetSection = document.getElementById(sectionId);
         if (targetSection) {
             targetSection.classList.remove('hidden');
@@ -248,24 +198,20 @@ class AdminManager {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(this.locationMap);
 
-            // Agregar marcador inicial
             this.locationMarker = L.marker([18.7357, -70.1627])
                 .addTo(this.locationMap)
                 .bindPopup('Ubicación de la propiedad')
                 .openPopup();
 
-            // Evento para cambiar ubicación al hacer clic en el mapa
             this.locationMap.on('click', (e) => {
                 const { lat, lng } = e.latlng;
                 
-                // Actualizar marcador
                 this.locationMap.removeLayer(this.locationMarker);
                 this.locationMarker = L.marker([lat, lng])
                     .addTo(this.locationMap)
                     .bindPopup('Ubicación seleccionada')
                     .openPopup();
 
-                // Actualizar coordenadas en el formulario
                 document.getElementById('propertyLat').value = lat;
                 document.getElementById('propertyLng').value = lng;
                 document.getElementById('selectedCoordinates').textContent = 
@@ -280,14 +226,9 @@ class AdminManager {
     setupImageUpload() {
         const uploadArea = document.getElementById('imageUploadArea');
         const fileInput = document.getElementById('imageUpload');
-        const previewContainer = document.getElementById('imagePreview');
 
-        // Click en el área de upload
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
+        uploadArea.addEventListener('click', () => fileInput.click());
 
-        // Drag and drop
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.classList.add('drag-over');
@@ -300,11 +241,9 @@ class AdminManager {
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            this.handleImageFiles(files);
+            this.handleImageFiles(e.dataTransfer.files);
         });
 
-        // Cambio en el input de archivos
         fileInput.addEventListener('change', (e) => {
             this.handleImageFiles(e.target.files);
         });
@@ -313,7 +252,6 @@ class AdminManager {
     handleImageFiles(files) {
         const maxImages = 5;
         
-        // Verificar límite
         if (this.selectedImages.length + files.length > maxImages) {
             alert(`❌ Solo puedes subir máximo ${maxImages} imágenes`);
             return;
@@ -343,7 +281,6 @@ class AdminManager {
         const previewContainer = document.getElementById('imagePreview');
         const uploadArea = document.getElementById('imageUploadArea');
         
-        // Ocultar placeholder si hay imágenes
         if (this.selectedImages.length > 0) {
             uploadArea.style.display = 'none';
         } else {
@@ -358,7 +295,6 @@ class AdminManager {
             </div>
         `).join('');
 
-        // Event listeners para botones de eliminar
         previewContainer.querySelectorAll('.remove-image').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -388,22 +324,31 @@ class AdminManager {
         if (!container) return;
 
         if (this.properties.length === 0) {
-            container.innerHTML = '<p class="no-properties">No hay propiedades registradas</p>';
+            container.innerHTML = `
+                <div class="no-properties">
+                    <h3>🏠 No hay propiedades registradas</h3>
+                    <p>Agrega tu primera propiedad haciendo clic en "Agregar Propiedad"</p>
+                    <button onclick="adminManager.showSection('add-property'); adminManager.updateActiveNav('add-property')" 
+                            class="btn-primary">
+                        ➕ Agregar Primera Propiedad
+                    </button>
+                </div>
+            `;
             return;
         }
 
         container.innerHTML = this.properties.map(property => `
-            <div class="property-item" data-id="${property.id}">
+            <div class="property-item">
                 <div class="property-info">
                     <h3>${property.title}</h3>
                     <div class="property-meta">
-                        <span class="price">$${property.price.toLocaleString()}</span>
+                        <span class="price">$${property.price?.toLocaleString() || '0'}</span>
                         <span class="type">${this.getTypeLabel(property.type)}</span>
-                        <span class="status ${property.status}">${property.status}</span>
+                        <span class="status ${property.status}">${property.status || 'disponible'}</span>
                     </div>
                     <div class="property-address">
                         <span>📍</span>
-                        <span>${property.location.address}</span>
+                        <span>${property.location?.address || 'Dirección no disponible'}</span>
                     </div>
                 </div>
                 <div class="property-actions">
@@ -428,12 +373,36 @@ class AdminManager {
         return types[type] || type;
     }
 
+    async deleteProperty(propertyId) {
+        if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
+            try {
+                const { error } = await supabase
+                    .from('properties')
+                    .delete()
+                    .eq('id', propertyId);
+
+                if (error) {
+                    alert('❌ Error eliminando propiedad: ' + error.message);
+                    return;
+                }
+
+                this.properties = this.properties.filter(p => p.id !== propertyId);
+                this.updateDashboard();
+                this.renderPropertiesList();
+                alert('🗑️ Propiedad eliminada exitosamente');
+
+            } catch (error) {
+                console.error('Error eliminando propiedad:', error);
+                alert('❌ Error al eliminar la propiedad');
+            }
+        }
+    }
+
     resetForm() {
         document.getElementById('propertyForm').reset();
         this.selectedImages = [];
         this.updateImagePreview();
         
-        // Restablecer mapa a posición inicial
         if (this.locationMarker) {
             this.locationMap.removeLayer(this.locationMarker);
             this.locationMarker = L.marker([18.7357, -70.1627])
@@ -446,10 +415,25 @@ class AdminManager {
                 'Lat: 18.7357, Lng: -70.1627';
         }
     }
+
+    showError(message) {
+        const container = document.getElementById('propertiesList');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-message">
+                    <h3>❌ Error</h3>
+                    <p>${message}</p>
+                    <button onclick="adminManager.loadPropertiesFromSupabase()" class="btn-primary">
+                        Reintentar
+                    </button>
+                </div>
+            `;
+        }
+    }
 }
 
-// Inicializar cuando el DOM esté listo
+// Inicializar
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ Admin Manager inicializado');
+    console.log('🚀 Inicializando aplicación...');
     window.adminManager = new AdminManager();
 });
