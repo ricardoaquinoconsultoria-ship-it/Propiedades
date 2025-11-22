@@ -439,6 +439,21 @@ body {
     background: linear-gradient(135deg, #15803d 0%, #166534 100%);
 }
 
+.btn-secondary {
+    background: var(--secondary);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: #475569;
+}
+
 /* ===== LISTA DE PROPIEDADES ===== */
 .properties-list {
     margin-top: 1.5rem;
@@ -516,6 +531,18 @@ body {
     gap: 0.5rem;
 }
 
+.property-area {
+    margin-top: 0.5rem;
+}
+
+.property-area small {
+    color: #64748b;
+    font-size: 0.8rem;
+    background: #f1f5f9;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
 .property-actions {
     display: flex;
     gap: 0.5rem;
@@ -565,6 +592,60 @@ body {
     background: var(--surface);
     border-radius: 12px;
     border: 2px dashed var(--border);
+}
+
+/* ===== ESTILOS PARA CAMPOS REQUERIDOS Y VALIDACIÓN ===== */
+.form-group input:required,
+.form-group select:required,
+.form-group textarea:required {
+    border-left: 4px solid #2563eb;
+}
+
+.form-group input:invalid,
+.form-group select:invalid,
+.form-group textarea:invalid {
+    border-color: #dc2626;
+}
+
+.required-field::after {
+    content: " *";
+    color: #dc2626;
+}
+
+/* Estilos para validación en tiempo real */
+.field-valid {
+    border-color: #16a34a !important;
+}
+
+.field-invalid {
+    border-color: #dc2626 !important;
+}
+
+/* Placeholder más claro para el área */
+#propertyArea::placeholder {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ===== MENSAJES DE ERROR Y ESTADOS ===== */
+.error-message {
+    text-align: center;
+    padding: 3rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    color: #dc2626;
+}
+
+.error-message h3 {
+    margin-bottom: 1rem;
+}
+
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: #64748b;
+    font-size: 1.1rem;
 }
 
 /* ===== RESPONSIVE ===== */
