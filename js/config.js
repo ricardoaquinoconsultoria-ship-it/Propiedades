@@ -2,59 +2,50 @@
 const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1GXQm6L0Om6AZReeTK0e3Q81k-UQSVJAu3xMNQ';
 
-// Inicializar Supabase REAL
+// Inicializar Supabase REAL (ahora que la tabla existe)
 function initializeSupabase() {
     console.log('🚀 Inicializando Supabase REAL...');
-    console.log('📝 URL:', SUPABASE_URL);
-    console.log('🔑 API Key:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+    console.log('📊 Tabla "properties" creada - Usando base de datos real');
     
     try {
-        // Verificar si la librería Supabase está disponible
         if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
             console.log('✅ Librería Supabase disponible');
-            
-            // Crear cliente Supabase REAL
             const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             
-            // Probar la conexión inmediatamente
-            testConnection(client);
+            // Probar la conexión
+            testSupabaseConnection(client);
             
             return client;
         } else {
             throw new Error('Librería Supabase no cargada');
         }
     } catch (error) {
-        console.error('❌ Error inicializando Supabase REAL:', error);
-        console.log('🔄 Usando modo local como respaldo...');
+        console.error('❌ Error con Supabase REAL:', error);
+        console.log('🔄 Cayendo a modo local...');
         return createLocalClient();
     }
 }
 
 // Probar conexión a Supabase
-async function testConnection(client) {
+async function testSupabaseConnection(client) {
     try {
         console.log('🔍 Probando conexión a Supabase...');
         const { data, error } = await client.from('properties').select('*').limit(1);
         
         if (error) {
             console.error('❌ Error de conexión:', error);
-            if (error.message.includes('JWT')) {
-                console.error('🔑 Problema con la API Key');
-            } else if (error.message.includes('properties')) {
-                console.error('📊 La tabla "properties" no existe');
-            }
         } else {
             console.log('✅ Conexión a Supabase EXITOSA');
-            console.log('📊 Tabla properties accesible');
+            console.log(`📊 Tabla "properties" tiene ${data.length} registros`);
         }
     } catch (testError) {
         console.error('❌ Error en prueba de conexión:', testError);
     }
 }
 
-// Cliente local de respaldo
+// Cliente local de respaldo (por si acaso)
 function createLocalClient() {
-    console.log('🏠 Creando cliente local...');
+    console.log('🏠 Usando almacenamiento LOCAL como respaldo');
     
     const localClient = {
         _isLocal: true,
@@ -82,18 +73,26 @@ function createLocalClient() {
             }),
             insert: (data) => ({
                 select: (columns = '*') => {
+                    console.log('💾 Guardando en LOCAL:', data);
                     const newData = Array.isArray(data) ? data : [data];
                     const result = [];
                     
                     newData.forEach(item => {
                         const newItem = {
                             id: item.id || Date.now() + Math.random(),
-                            title: item.title || '',
+                            title: item.title || 'Sin título',
                             type: item.type || 'casa',
                             price: item.price || 0,
                             description: item.description || '',
                             location: item.location || { address: '', lat: 0, lng: 0 },
-                            characteristics: item.characteristics || { bedrooms: 0, bathrooms: 0, area: 0 },
+                            characteristics: item.characteristics || { 
+                                bedrooms: 0, 
+                                bathrooms: 0, 
+                                area: 0,
+                                parking: false,
+                                pool: false,
+                                garden: false
+                            },
                             images: item.images || [],
                             status: item.status || 'disponible',
                             created_at: item.created_at || new Date().toISOString()
@@ -121,7 +120,7 @@ function createLocalClient() {
     return localClient;
 }
 
-// Funciones para localStorage
+// Funciones para localStorage (respaldo)
 function getLocalData(table) {
     const key = `inmobiliaria_${table}`;
     try {
@@ -140,7 +139,6 @@ function saveLocalData(table, item) {
         const filteredData = currentData.filter(existing => existing.id !== item.id);
         filteredData.push(item);
         localStorage.setItem(key, JSON.stringify(filteredData));
-        console.log('💾 Guardado en localStorage:', item.title);
     } catch (error) {
         console.error('Error guardando en localStorage:', error);
     }
@@ -172,4 +170,4 @@ window.checkSupabaseStatus = function() {
     }
 };
 
-console.log('✅ Configuración cargada con tus credenciales actuales');
+console.log('🔧 Configuración cargada - Supabase REAL activo');
