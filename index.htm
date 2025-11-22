@@ -33,6 +33,54 @@
         </div>
     </div>
 
+    <!-- Modal de detalles de propiedad -->
+    <div id="propertyModal" class="modal hidden">
+        <div class="modal-content property-modal-content">
+            <div class="modal-header">
+                <h3 id="propertyModalTitle">Detalles de la Propiedad</h3>
+                <button class="close-modal" id="closePropertyModal">×</button>
+            </div>
+            <div class="modal-body property-modal-body">
+                <div class="property-gallery">
+                    <div class="main-image">
+                        <img id="propertyMainImage" src="" alt="Imagen principal">
+                    </div>
+                    <div class="image-thumbnails" id="propertyThumbnails">
+                        <!-- Las miniaturas se generarán aquí -->
+                    </div>
+                </div>
+                
+                <div class="property-details">
+                    <div class="property-price" id="propertyModalPrice"></div>
+                    <div class="property-type" id="propertyModalType"></div>
+                    <div class="property-address" id="propertyModalAddress"></div>
+                    
+                    <div class="property-features">
+                        <h4>📊 Características</h4>
+                        <div class="features-grid" id="propertyFeatures">
+                            <!-- Características se generarán aquí -->
+                        </div>
+                    </div>
+                    
+                    <div class="property-description">
+                        <h4>📝 Descripción</h4>
+                        <p id="propertyDescription"></p>
+                    </div>
+                    
+                    <div class="property-contact">
+                        <h4>📞 Contacto</h4>
+                        <div class="contact-info">
+                            <p><strong>Teléfono:</strong> <span id="propertyPhone">+1 809-555-1234</span></p>
+                            <p><strong>Email:</strong> <span id="propertyEmail">info@inmobiliaria.com</span></p>
+                            <p><strong>Agente:</strong> <span id="propertyAgent">María Rodríguez</span></p>
+                        </div>
+                        <button class="btn-primary contact-btn">📞 Contactar Ahora</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="client-header">
         <div class="header-content">
