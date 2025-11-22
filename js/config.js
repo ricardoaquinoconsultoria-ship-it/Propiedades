@@ -1,10 +1,12 @@
-// Configuración de Supabase
+// Configuración de Supabase - TUS CREDENCIALES CORRECTAS
 const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1qfeM7S7wffWb3q0VcH7RTVg5H6VnL_2QcTj7E';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1GXQm6L0Om6AZReeTK0e3Q81k-UQSVJAu3xMNQ';
 
-// Inicializar Supabase de forma simple y directa
+// Inicializar Supabase REAL
 function initializeSupabase() {
-    console.log('🔧 Inicializando Supabase...');
+    console.log('🚀 Inicializando Supabase REAL...');
+    console.log('📝 URL:', SUPABASE_URL);
+    console.log('🔑 API Key:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
     
     try {
         // Verificar si la librería Supabase está disponible
@@ -14,93 +16,113 @@ function initializeSupabase() {
             // Crear cliente Supabase REAL
             const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             
-            // Verificar conexión haciendo una prueba simple
-            testSupabaseConnection(client);
+            // Probar la conexión inmediatamente
+            testConnection(client);
             
             return client;
         } else {
-            throw new Error('Librería Supabase no cargada correctamente');
+            throw new Error('Librería Supabase no cargada');
         }
     } catch (error) {
         console.error('❌ Error inicializando Supabase REAL:', error);
-        console.log('🔄 Creando cliente de respaldo...');
-        return createBackupClient();
+        console.log('🔄 Usando modo local como respaldo...');
+        return createLocalClient();
     }
 }
 
-// Función para probar la conexión a Supabase
-async function testSupabaseConnection(client) {
+// Probar conexión a Supabase
+async function testConnection(client) {
     try {
         console.log('🔍 Probando conexión a Supabase...');
-        const { data, error } = await client.from('properties').select('count').limit(1);
+        const { data, error } = await client.from('properties').select('*').limit(1);
         
         if (error) {
-            console.error('❌ Error de conexión a Supabase:', error);
+            console.error('❌ Error de conexión:', error);
             if (error.message.includes('JWT')) {
-                console.error('🔑 Problema con la API Key - Verifica las credenciales');
+                console.error('🔑 Problema con la API Key');
+            } else if (error.message.includes('properties')) {
+                console.error('📊 La tabla "properties" no existe');
             }
         } else {
-            console.log('✅ Conexión a Supabase exitosa');
+            console.log('✅ Conexión a Supabase EXITOSA');
+            console.log('📊 Tabla properties accesible');
         }
     } catch (testError) {
         console.error('❌ Error en prueba de conexión:', testError);
     }
 }
 
-// Cliente de respaldo para cuando Supabase falle
-function createBackupClient() {
-    console.log('🏠 Creando cliente de respaldo (local storage)');
+// Cliente local de respaldo
+function createLocalClient() {
+    console.log('🏠 Creando cliente local...');
     
-    const backupClient = {
-        _isBackup: true,
+    const localClient = {
+        _isLocal: true,
         from: (table) => ({
             select: (columns = '*') => ({
                 eq: (column, value) => {
-                    const data = getFromLocalStorage(table).filter(item => item[column] === value);
+                    const data = getLocalData(table).filter(item => item[column] === value);
                     return Promise.resolve({ data, error: null });
                 },
                 order: (column, options = { ascending: false }) => {
-                    let data = getFromLocalStorage(table);
+                    let data = getLocalData(table);
                     data.sort((a, b) => {
                         if (options.ascending) {
-                            return a[column] > b[column] ? 1 : -1;
+                            return new Date(a.created_at) - new Date(b.created_at);
                         } else {
-                            return a[column] < b[column] ? 1 : -1;
+                            return new Date(b.created_at) - new Date(a.created_at);
                         }
                     });
                     return Promise.resolve({ data, error: null });
                 },
                 then: (resolve) => {
-                    const data = getFromLocalStorage(table);
+                    const data = getLocalData(table);
                     resolve({ data, error: null });
                 }
             }),
             insert: (data) => ({
                 select: (columns = '*') => {
                     const newData = Array.isArray(data) ? data : [data];
+                    const result = [];
+                    
                     newData.forEach(item => {
-                        item.id = item.id || Date.now();
-                        item.created_at = item.created_at || new Date().toISOString();
-                        item.status = item.status || 'disponible';
-                        saveToLocalStorage('properties', item);
+                        const newItem = {
+                            id: item.id || Date.now() + Math.random(),
+                            title: item.title || '',
+                            type: item.type || 'casa',
+                            price: item.price || 0,
+                            description: item.description || '',
+                            location: item.location || { address: '', lat: 0, lng: 0 },
+                            characteristics: item.characteristics || { bedrooms: 0, bathrooms: 0, area: 0 },
+                            images: item.images || [],
+                            status: item.status || 'disponible',
+                            created_at: item.created_at || new Date().toISOString()
+                        };
+                        
+                        saveLocalData(table, newItem);
+                        result.push(newItem);
                     });
-                    return Promise.resolve({ data: newData, error: null });
+                    
+                    return Promise.resolve({ data: result, error: null });
                 }
             }),
             delete: () => ({
                 eq: (column, value) => {
-                    removeFromLocalStorage('properties', column, value);
+                    removeLocalData(table, column, value);
                     return Promise.resolve({ error: null });
                 }
+            }),
+            update: (data) => ({
+                eq: (column, value) => Promise.resolve({ data: null, error: null })
             })
         })
     };
     
-    return backupClient;
+    return localClient;
 }
 
 // Funciones para localStorage
-function getFromLocalStorage(table) {
+function getLocalData(table) {
     const key = `inmobiliaria_${table}`;
     try {
         const data = localStorage.getItem(key);
@@ -111,22 +133,23 @@ function getFromLocalStorage(table) {
     }
 }
 
-function saveToLocalStorage(table, item) {
+function saveLocalData(table, item) {
     const key = `inmobiliaria_${table}`;
     try {
-        const currentData = getFromLocalStorage(table);
-        currentData.push(item);
-        localStorage.setItem(key, JSON.stringify(currentData));
-        console.log('💾 Guardado en localStorage:', item);
+        const currentData = getLocalData(table);
+        const filteredData = currentData.filter(existing => existing.id !== item.id);
+        filteredData.push(item);
+        localStorage.setItem(key, JSON.stringify(filteredData));
+        console.log('💾 Guardado en localStorage:', item.title);
     } catch (error) {
         console.error('Error guardando en localStorage:', error);
     }
 }
 
-function removeFromLocalStorage(table, column, value) {
+function removeLocalData(table, column, value) {
     const key = `inmobiliaria_${table}`;
     try {
-        const currentData = getFromLocalStorage(table);
+        const currentData = getLocalData(table);
         const newData = currentData.filter(item => item[column] !== value);
         localStorage.setItem(key, JSON.stringify(newData));
     } catch (error) {
@@ -134,20 +157,19 @@ function removeFromLocalStorage(table, column, value) {
     }
 }
 
-// Inicializar y asignar globalmente
+// Inicializar
 window.supabase = initializeSupabase();
 window.initializeSupabase = initializeSupabase;
 
 // Función para verificar estado
 window.checkSupabaseStatus = function() {
-    if (window.supabase && !window.supabase._isBackup) {
+    if (window.supabase && !window.supabase._isLocal) {
         console.log('✅ Conectado a Supabase REAL');
         return true;
     } else {
-        console.log('🏠 Usando almacenamiento LOCAL (Supabase no disponible)');
+        console.log('🏠 Usando almacenamiento LOCAL');
         return false;
     }
 };
 
-console.log('🔧 Configuración cargada');
-console.log('📊 Estado Supabase:', window.checkSupabaseStatus() ? 'REAL' : 'LOCAL');
+console.log('✅ Configuración cargada con tus credenciales actuales');
