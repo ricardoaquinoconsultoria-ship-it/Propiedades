@@ -96,7 +96,6 @@ class ClientManager {
         const password = document.getElementById('adminPassword').value;
         
         if (password === this.ADMIN_PASSWORD) {
-            // Contraseña correcta, redirigir a admin
             window.location.href = 'admin.html';
         } else {
             alert('❌ Contraseña incorrecta. Intenta nuevamente.');
@@ -142,19 +141,21 @@ class ClientManager {
 
         // Cerrar dropdown al hacer clic fuera
         document.addEventListener('click', () => {
-            filterDropdown.classList.add('hidden');
-            filterBtn.classList.remove('active');
+            if (filterDropdown) {
+                filterDropdown.classList.add('hidden');
+            }
+            if (filterBtn) {
+                filterBtn.classList.remove('active');
+            }
         });
     }
 
     async initializeMap() {
         try {
-            // Coordenadas por defecto (República Dominicana)
             const defaultLocation = [18.7357, -70.1627];
             
             this.map = L.map('map').setView(defaultLocation, 8);
 
-            // Capa de OpenStreetMap
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
@@ -263,7 +264,6 @@ class ClientManager {
             this.addPropertyToMap(property);
         });
 
-        // Ajustar vista del mapa si hay propiedades
         if (this.markers.length > 0) {
             const group = L.featureGroup(this.markers);
             this.map.fitBounds(group.getBounds().pad(0.1));
