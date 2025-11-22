@@ -121,14 +121,17 @@ class AdminManager {
 
             console.log('📤 Enviando propiedad a Supabase...', formData);
 
-            // **CORRECCIÓN: Versión simplificada sin .select()**
-            const { error } = await window.supabase
+            // **CORRECCIÓN: Sintaxis correcta de Supabase**
+            const { data, error } = await window.supabase
                 .from('properties')
-                .insert([formData]);  // Solo insert, sin .select()
+                .insert([formData])
+                .select();
 
             if (error) {
                 throw new Error(error.message);
             }
+
+            console.log('✅ Propiedad agregada:', data);
 
             // Si no hay error, fue exitoso - recargar propiedades
             alert('✅ Propiedad agregada exitosamente!');
