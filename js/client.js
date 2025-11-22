@@ -19,14 +19,14 @@ class ModernClientManager {
         try {
             console.log('📡 Cargando propiedades...');
             
-            // Cargar desde Supabase
-            const supabaseProperties = await this.loadFromSupabase();
+            // Siempre cargar desde el almacenamiento actual
+            const loadedProperties = await this.loadPropertiesData();
             
-            if (supabaseProperties && supabaseProperties.length > 0) {
-                console.log(`✅ ${supabaseProperties.length} propiedades cargadas desde Supabase`);
-                this.properties = supabaseProperties;
+            if (loadedProperties && loadedProperties.length > 0) {
+                console.log(`✅ ${loadedProperties.length} propiedades cargadas`);
+                this.properties = loadedProperties;
             } else {
-                console.log('📝 Cargando propiedades de ejemplo');
+                console.log('📝 No hay propiedades, cargando ejemplos');
                 await this.loadExampleProperties();
             }
 
@@ -39,45 +39,51 @@ class ModernClientManager {
         }
     }
 
-    async loadFromSupabase() {
+    async loadPropertiesData() {
         try {
-            console.log('🔍 Intentando cargar desde Supabase...');
+            console.log('🔍 Cargando datos de propiedades...');
             
-            if (!window.supabase || typeof window.supabase.from !== 'function') {
+            if (!window.supabase) {
                 console.log('❌ Supabase no disponible');
                 return null;
             }
 
-            const { data: properties, error } = await window.supabase
-                .from('properties')
-                .select('*')
-                .eq('status', 'disponible')
-                .order('created_at', { ascending: false });
+            // Usar el método then() que funciona en ambos modos
+            const { data: properties, error } = await new Promise((resolve) => {
+                window.supabase
+                    .from('properties')
+                    .select('*')
+                    .eq('status', 'disponible')
+                    .order('created_at', { ascending: false })
+                    .then(resolve);
+            });
 
             if (error) {
-                console.error('Error de Supabase:', error);
+                console.error('Error cargando propiedades:', error);
                 return null;
             }
 
-            console.log('📊 Propiedades desde Supabase:', properties);
+            console.log('📊 Propiedades cargadas:', properties);
             return properties;
 
         } catch (error) {
-            console.error('Error cargando de Supabase:', error);
+            console.error('Error:', error);
             return null;
         }
     }
 
     async loadExampleProperties() {
         console.log('🔄 Cargando propiedades de ejemplo...');
+        
+        // Propiedades de ejemplo básicas
         this.properties = [
             {
                 id: 1,
-                title: "Hermosa Casa Familiar con Piscina",
+                title: "Casa Familiar con Piscina",
                 type: "casa",
                 price: 350000,
                 location: {
-                    address: "Calle Principal #123, Santo Domingo Este",
+                    address: "Calle Principal #123",
                     lat: 18.4855,
                     lng: -69.8731
                 },
@@ -89,20 +95,20 @@ class ModernClientManager {
                     pool: true,
                     garden: true
                 },
-                description: "Impresionante casa familiar ubicada en una zona residencial exclusiva.",
+                description: "Hermosa casa familiar en zona residencial.",
                 images: [
-                    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600"
+                    "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=600"
                 ],
                 status: "disponible",
                 created_at: new Date().toISOString()
             },
             {
                 id: 2,
-                title: "Apartamento de Lujo en Torre Moderna",
+                title: "Apartamento Moderno",
                 type: "apartamento",
                 price: 185000,
                 location: {
-                    address: "Av. George Washington #456, Malecón",
+                    address: "Av. Principal #456",
                     lat: 18.4735,
                     lng: -69.8904
                 },
@@ -111,10 +117,10 @@ class ModernClientManager {
                     bathrooms: 2,
                     area: 95,
                     parking: true,
-                    pool: true,
+                    pool: false,
                     garden: false
                 },
-                description: "Elegante apartamento en torre de lujo con vista al mar.",
+                description: "Apartamento moderno en zona céntrica.",
                 images: [
                     "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600"
                 ],
@@ -147,6 +153,10 @@ class ModernClientManager {
         this.setupFilters();
         
         // Botón para recargar propiedades
+        this.addReloadButton();
+    }
+
+    addReloadButton() {
         const reloadBtn = document.createElement('button');
         reloadBtn.innerHTML = '🔄 Actualizar';
         reloadBtn.style.position = 'fixed';
@@ -159,6 +169,7 @@ class ModernClientManager {
         reloadBtn.style.padding = '10px 15px';
         reloadBtn.style.borderRadius = '8px';
         reloadBtn.style.cursor = 'pointer';
+        reloadBtn.style.fontSize = '14px';
         reloadBtn.addEventListener('click', () => {
             this.loadProperties();
         });
@@ -295,11 +306,11 @@ class ModernClientManager {
 
         if (images && images.length > 0) {
             mainImage.src = images[0];
-            mainImage.alt = 'Imagen principal de la propiedad';
+            mainImage.alt = 'Imagen principal';
 
             thumbnailsContainer.innerHTML = images.map((image, index) => `
                 <div class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${image}">
-                    <img src="${image}" alt="Miniatura ${index + 1}" onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600'">
+                    <img src="${image}" alt="Miniatura ${index + 1}">
                 </div>
             `).join('');
 
@@ -348,14 +359,14 @@ class ModernClientManager {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(this.map);
             
-            console.log('✅ Mapa inicializado correctamente');
+            console.log('✅ Mapa inicializado');
         } catch (error) {
             console.error('❌ Error inicializando mapa:', error);
         }
     }
 
     renderMapMarkers() {
-        console.log('📍 Renderizando marcadores del mapa...');
+        console.log('📍 Renderizando marcadores...');
         
         this.markers.forEach(marker => {
             if (this.map && marker) {
@@ -364,20 +375,16 @@ class ModernClientManager {
         });
         this.markers = [];
 
-        if (!this.map) {
-            console.log('❌ Mapa no disponible');
-            return;
-        }
+        if (!this.map) return;
 
         this.filteredProperties.forEach(property => {
             if (!property.location || !property.location.lat || !property.location.lng) {
-                console.log('❌ Propiedad sin coordenadas:', property.title);
                 return;
             }
 
             try {
                 const customIcon = L.divIcon({
-                    html: `<div style="background: #2563eb; color: white; padding: 8px; border-radius: 50%; font-size: 16px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🏠</div>`,
+                    html: `<div style="background: #2563eb; color: white; padding: 8px; border-radius: 50%; font-size: 16px; border: 2px solid white;">🏠</div>`,
                     className: 'property-marker',
                     iconSize: [40, 40]
                 });
@@ -387,12 +394,11 @@ class ModernClientManager {
                     .bindPopup(`
                         <div style="min-width: 200px;">
                             <img src="${property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600'}" 
-                                 alt="${property.title}" 
                                  style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
                             <h4 style="margin: 8px 0; font-size: 14px;">${property.title}</h4>
                             <p style="margin: 4px 0; font-weight: bold; color: #2563eb;">$${(property.price || 0).toLocaleString()}</p>
                             <button onclick="clientManager.showPropertyDetails(${property.id})" 
-                                    style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 8px; font-size: 12px;">
+                                    style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 8px;">
                                 Ver Detalles
                             </button>
                         </div>
@@ -401,7 +407,7 @@ class ModernClientManager {
                 this.markers.push(marker);
                 
             } catch (error) {
-                console.error('❌ Error creando marcador:', error);
+                console.error('Error creando marcador:', error);
             }
         });
 
@@ -409,17 +415,13 @@ class ModernClientManager {
             try {
                 const group = new L.featureGroup(this.markers);
                 this.map.fitBounds(group.getBounds().pad(0.1));
-                console.log(`✅ ${this.markers.length} marcadores renderizados`);
             } catch (error) {
-                console.error('❌ Error ajustando vista del mapa:', error);
+                console.error('Error ajustando mapa:', error);
             }
-        } else {
-            console.log('ℹ️ No hay marcadores para mostrar');
         }
     }
 
     applyFilter(filter) {
-        console.log(`🔍 Aplicando filtro: ${filter}`);
         this.currentFilter = filter;
         
         if (filter === 'all') {
@@ -429,8 +431,6 @@ class ModernClientManager {
                 property.type === filter
             );
         }
-        
-        console.log(`📊 ${this.filteredProperties.length} propiedades después del filtro`);
         
         this.renderProperties();
         this.updatePropertiesCount();
@@ -455,27 +455,17 @@ class ModernClientManager {
             };
             titleElement.textContent = filterLabels[this.currentFilter] || 'Propiedades';
         }
-        
-        console.log(`📈 Contador actualizado: ${this.filteredProperties.length} propiedades`);
     }
 
     renderProperties() {
         const container = document.getElementById('propertiesGrid');
-        if (!container) {
-            console.log('❌ Contenedor de propiedades no encontrado');
-            return;
-        }
-
-        console.log(`🎨 Renderizando ${this.filteredProperties.length} propiedades...`);
+        if (!container) return;
 
         if (this.filteredProperties.length === 0) {
             container.innerHTML = `
                 <div class="no-properties" style="grid-column: 1/-1; text-align: center; padding: 60px; color: #64748b;">
                     <h3>🏠 No hay propiedades disponibles</h3>
                     <p>Intenta con otros filtros de búsqueda</p>
-                    <button onclick="clientManager.loadProperties()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 1rem;">
-                        🔄 Recargar Propiedades
-                    </button>
                 </div>
             `;
             return;
@@ -485,8 +475,7 @@ class ModernClientManager {
             <div class="property-card" onclick="clientManager.showPropertyDetails(${property.id})">
                 <div class="property-image">
                     <img src="${property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600'}" 
-                         alt="${property.title}"
-                         onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600'">
+                         alt="${property.title}">
                     <div class="property-badge">${this.getTypeLabel(property.type)}</div>
                 </div>
                 <div class="property-info">
@@ -501,38 +490,24 @@ class ModernClientManager {
                         ${property.characteristics?.bathrooms > 0 ? `<span>🚿 ${property.characteristics.bathrooms} baños</span>` : ''}
                         <span>📐 ${property.characteristics?.area || 0} m²</span>
                     </div>
-                    <button class="view-details-btn">Ver Detalles Completos</button>
+                    <button class="view-details-btn">Ver Detalles</button>
                 </div>
             </div>
         `).join('');
-
-        console.log('✅ Propiedades renderizadas correctamente');
     }
 
     showPropertyDetails(propertyId) {
-        console.log(`🔍 Mostrando detalles de propiedad ID: ${propertyId}`);
         const property = this.properties.find(p => p.id == propertyId);
         if (property) {
             this.showPropertyModal(property);
         } else {
-            console.log('❌ Propiedad no encontrada:', propertyId);
             alert('Propiedad no encontrada');
         }
     }
 }
 
-// Inicializar la aplicación
+// Inicializar
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DOM cargado, inicializando Client Manager...');
+    console.log('🚀 Inicializando Client Manager...');
     window.clientManager = new ModernClientManager();
 });
-
-// DEBUG TEMPORAL
-console.log('=== DEBUG MODE CLIENT ===');
-setTimeout(() => {
-    console.log('🕒 Diagnóstico automático ejecutado');
-    if (window.clientManager && window.clientManager.properties) {
-        console.log(`📊 Total propiedades: ${window.clientManager.properties.length}`);
-        console.log('Propiedades:', window.clientManager.properties);
-    }
-}, 5000);
