@@ -2,13 +2,37 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Inmobiliaria Moderna</title>
     <link rel="stylesheet" href="css/client.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ESTILOS DE PRUEBA PARA MÓVIL */
+        .mobile-test {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #dc2626;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .mobile-test.success {
+            background: #16a34a;
+        }
+    </style>
 </head>
 <body>
+    <!-- PRUEBA MÓVIL - DEBE SER LO PRIMERO EN EL BODY -->
+    <div class="mobile-test" id="mobileTest">
+        🔴 PRUEBA: Toca aquí
+    </div>
+
     <!-- Botón flotante admin -->
     <div class="admin-floating-btn">
         <button id="adminAccessBtn" title="Acceso Administrador">⚙️ Admin</button>
@@ -170,10 +194,254 @@
         </div>
     </footer>
 
-    <!-- Scripts CON SUPABASE -->
+    <!-- SCRIPTS TODO EN UNO -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/config.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/client.js"></script>
+    
+    <script>
+        // PRUEBA INMEDIATA DE JAVASCRIPT
+        console.log('🎯 INICIANDO EN MÓVIL...');
+        
+        // 1. PRUEBA DEL BOTÓN ROJO
+        const mobileTest = document.getElementById('mobileTest');
+        if (mobileTest) {
+            mobileTest.addEventListener('click', function() {
+                this.classList.add('success');
+                this.innerHTML = '✅ JavaScript FUNCIONA!';
+                alert('🎉 ¡JavaScript está activo en tu móvil!');
+                
+                // Probar también el botón admin
+                testAdminButton();
+            });
+            
+            // Mostrar que el evento se configuró
+            mobileTest.innerHTML += ' - Listo';
+        }
+
+        function testAdminButton() {
+            const adminBtn = document.getElementById('adminAccessBtn');
+            if (adminBtn) {
+                alert('✅ Botón Admin encontrado\nAhora toca el botón ⚙️ Admin para probarlo');
+            } else {
+                alert('❌ Botón Admin NO encontrado');
+            }
+        }
+
+        // CONFIGURACIÓN SUPABASE
+        const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1GXQm6L0Om6AZReeTK0e3Q81k-UQSVJAu3xMNQ';
+        
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // CLIENT MANAGER SIMPLIFICADO PARA MÓVIL
+        class ModernClientManager {
+            constructor() {
+                this.properties = [];
+                this.filteredProperties = [];
+                this.currentFilter = 'all';
+                this.map = null;
+                this.markers = [];
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.initializeMap();
+                this.loadProperties();
+            }
+
+            setupEventListeners() {
+                // BOTÓN ADMIN
+                const adminBtn = document.getElementById('adminAccessBtn');
+                if (adminBtn) {
+                    adminBtn.addEventListener('click', () => {
+                        alert('👆 Botón Admin funcionando!');
+                        this.showAdminModal();
+                    });
+                }
+
+                // MODAL ADMIN
+                const closeAdmin = document.getElementById('closeAdminModal');
+                const cancelAdmin = document.getElementById('cancelAdminBtn');
+                const submitAdmin = document.getElementById('submitAdminBtn');
+
+                if (closeAdmin) closeAdmin.addEventListener('click', () => this.hideAdminModal());
+                if (cancelAdmin) cancelAdmin.addEventListener('click', () => this.hideAdminModal());
+                if (submitAdmin) submitAdmin.addEventListener('click', () => this.handleAdminLogin());
+
+                // FILTROS
+                const mainFilterBtn = document.getElementById('mainFilterBtn');
+                if (mainFilterBtn) {
+                    mainFilterBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const filterOptions = document.getElementById('filterOptions');
+                        if (filterOptions) filterOptions.classList.toggle('hidden');
+                    });
+                }
+
+                const filterOptions = document.querySelectorAll('.filter-option');
+                filterOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        const filter = option.getAttribute('data-filter');
+                        this.applyFilter(filter);
+                    });
+                });
+            }
+
+            showAdminModal() {
+                const modal = document.getElementById('adminModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                }
+            }
+
+            hideAdminModal() {
+                const modal = document.getElementById('adminModal');
+                if (modal) modal.classList.add('hidden');
+            }
+
+            handleAdminLogin() {
+                const password = document.getElementById('adminPassword').value;
+                if (password) {
+                    window.location.href = 'admin.html';
+                } else {
+                    alert('Por favor ingresa una contraseña');
+                }
+            }
+
+            initializeMap() {
+                try {
+                    this.map = L.map('map').setView([18.7357, -70.1627], 8);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+                } catch (error) {
+                    console.error('Error con mapa:', error);
+                }
+            }
+
+            loadProperties() {
+                // Propiedades de ejemplo
+                this.properties = [
+                    {
+                        id: 1,
+                        title: "Casa Familiar",
+                        type: "casa",
+                        price: 350000,
+                        location: {
+                            address: "Calle Principal #123",
+                            lat: 18.4855,
+                            lng: -69.8731
+                        },
+                        characteristics: {
+                            bedrooms: 4,
+                            bathrooms: 3,
+                            area: 220
+                        },
+                        description: "Hermosa casa familiar",
+                        images: ["https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600"],
+                        status: "disponible"
+                    },
+                    {
+                        id: 2,
+                        title: "Apartamento Moderno",
+                        type: "apartamento", 
+                        price: 185000,
+                        location: {
+                            address: "Av. Principal #456",
+                            lat: 18.4735,
+                            lng: -69.8904
+                        },
+                        characteristics: {
+                            bedrooms: 2,
+                            bathrooms: 2,
+                            area: 95
+                        },
+                        description: "Apartamento con vista al mar",
+                        images: ["https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600"],
+                        status: "disponible"
+                    }
+                ];
+
+                this.filteredProperties = [...this.properties];
+                this.renderProperties();
+                this.renderMapMarkers();
+                this.updatePropertiesCount();
+            }
+
+            applyFilter(filter) {
+                this.currentFilter = filter;
+                this.filteredProperties = filter === 'all' 
+                    ? [...this.properties] 
+                    : this.properties.filter(p => p.type === filter);
+                
+                this.renderProperties();
+                this.updatePropertiesCount();
+                this.renderMapMarkers();
+            }
+
+            updatePropertiesCount() {
+                const countElement = document.getElementById('propertiesCount');
+                if (countElement) countElement.textContent = this.filteredProperties.length;
+            }
+
+            renderProperties() {
+                const container = document.getElementById('propertiesGrid');
+                if (!container) return;
+
+                if (this.filteredProperties.length === 0) {
+                    container.innerHTML = '<div class="no-properties">No hay propiedades</div>';
+                    return;
+                }
+
+                container.innerHTML = this.filteredProperties.map(property => `
+                    <div class="property-card">
+                        <div class="property-image">
+                            <img src="${property.images[0]}" alt="${property.title}">
+                            <div class="property-badge">${property.type}</div>
+                        </div>
+                        <div class="property-info">
+                            <h3>${property.title}</h3>
+                            <div class="property-price">$${property.price.toLocaleString()}</div>
+                            <div class="property-address">
+                                <span>📍</span>
+                                <span>${property.location.address}</span>
+                            </div>
+                            <div class="property-features-preview">
+                                <span>🛏️ ${property.characteristics.bedrooms} hab.</span>
+                                <span>🚿 ${property.characteristics.bathrooms} baños</span>
+                                <span>📐 ${property.characteristics.area} m²</span>
+                            </div>
+                            <button class="view-details-btn">Ver Detalles</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderMapMarkers() {
+                if (!this.map) return;
+
+                this.markers.forEach(marker => this.map.removeLayer(marker));
+                this.markers = [];
+
+                this.filteredProperties.forEach(property => {
+                    if (property.location.lat && property.location.lng) {
+                        const marker = L.marker([property.location.lat, property.location.lng])
+                            .addTo(this.map)
+                            .bindPopup(`<b>${property.title}</b><br>$${property.price.toLocaleString()}`);
+                        this.markers.push(marker);
+                    }
+                });
+
+                if (this.markers.length > 0) {
+                    const group = new L.featureGroup(this.markers);
+                    this.map.fitBounds(group.getBounds().pad(0.1));
+                }
+            }
+        }
+
+        // INICIALIZAR
+        document.addEventListener('DOMContentLoaded', function() {
+            window.clientManager = new ModernClientManager();
+            window.clientManager.init();
+        });
+    </script>
 </body>
 </html>
