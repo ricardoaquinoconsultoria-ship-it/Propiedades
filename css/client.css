@@ -1,216 +1,199 @@
-* {
-    margin: 0;
+/* Modal de detalles de propiedad */
+.property-modal-content {
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.property-modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
     padding: 0;
-    box-sizing: border-box;
 }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-    color: #2c3e50;
+.property-gallery {
     background: #f8f9fa;
-}
-
-.hidden {
-    display: none !important;
-}
-
-/* Botón flotante admin */
-.admin-floating-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-}
-
-.admin-floating-btn button {
-    background: #2c3e50;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    transition: all 0.3s ease;
-}
-
-.admin-floating-btn button:hover {
-    transform: scale(1.1);
-    background: #3498db;
-}
-
-/* Modal */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 15px;
-    width: 90%;
-    max-width: 400px;
-    overflow: hidden;
-}
-
-.modal-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-    color: white;
     padding: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
 
-.modal-body {
-    padding: 2rem;
-}
-
-/* Header principal */
-.client-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-    color: white;
-    padding: 2rem 0;
-}
-
-.header-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-.header-main {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.main-image {
+    width: 100%;
+    height: 300px;
+    border-radius: 10px;
+    overflow: hidden;
     margin-bottom: 1rem;
 }
 
-/* Filtros */
-.properties-filter {
-    position: relative;
-}
-
-.filter-btn {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 25px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.filter-dropdown {
-    position: absolute;
-    top: 100%;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    margin-top: 10px;
-    z-index: 1000;
-    overflow: hidden;
-}
-
-.filter-option {
-    padding: 15px 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.filter-option:hover {
-    background: #3498db;
-    color: white;
-}
-
-/* Mapa */
-.map-section {
-    height: 500px;
-    margin: 2rem 0;
-}
-
-#map {
+.main-image img {
+    width: 100%;
     height: 100%;
-    width: 100%;
-}
-
-/* Grid de propiedades */
-.properties-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2rem;
-}
-
-.property-card {
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.property-image {
-    width: 100%;
-    height: 200px;
     object-fit: cover;
 }
 
-.property-info {
+.image-thumbnails {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.thumbnail {
+    width: 100%;
+    height: 80px;
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.thumbnail:hover {
+    border-color: #3498db;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail.active {
+    border-color: #3498db;
+}
+
+.property-details {
     padding: 1.5rem;
 }
 
 .property-price {
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: bold;
     color: #27ae60;
+    margin-bottom: 0.5rem;
+}
+
+.property-type {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+    margin-bottom: 1rem;
+    padding: 0.3rem 0.8rem;
+    background: #ecf0f1;
+    border-radius: 15px;
+    display: inline-block;
+}
+
+.property-address {
+    font-size: 1rem;
+    color: #34495e;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.property-features {
+    margin: 1.5rem 0;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.property-description {
+    margin: 1.5rem 0;
+}
+
+.property-description p {
+    line-height: 1.6;
+    color: #555;
+}
+
+.property-contact {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-top: 1.5rem;
+}
+
+.contact-info p {
     margin: 0.5rem 0;
 }
 
-/* Botones */
-.btn-primary {
+.contact-btn {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 15px;
+    font-size: 1.1rem;
+}
+
+/* Popup personalizado del mapa */
+.property-popup .leaflet-popup-content-wrapper {
+    border-radius: 10px;
+    padding: 5px;
+}
+
+.property-popup .leaflet-popup-content {
+    margin: 8px 12px;
+}
+
+.popup-content {
+    text-align: center;
+}
+
+.popup-image {
+    width: 100%;
+    height: 120px;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.popup-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.popup-price {
+    font-weight: bold;
+    color: #27ae60;
+    font-size: 1.1rem;
+}
+
+.popup-btn {
     background: #3498db;
     color: white;
     border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
+    padding: 8px 15px;
+    border-radius: 5px;
     cursor: pointer;
-    font-weight: 600;
-}
-
-.btn-primary:hover {
-    background: #2980b9;
-}
-
-.btn-secondary {
-    background: #95a5a6;
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
-    cursor: pointer;
+    margin-top: 0.5rem;
+    width: 100%;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .header-main {
-        flex-direction: column;
-        gap: 1rem;
+    .property-modal-body {
+        grid-template-columns: 1fr;
     }
     
-    .properties-grid {
+    .property-modal-content {
+        margin: 1rem;
+    }
+    
+    .features-grid {
         grid-template-columns: 1fr;
     }
 }
