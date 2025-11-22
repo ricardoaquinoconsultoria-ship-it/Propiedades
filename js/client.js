@@ -18,15 +18,21 @@ class ModernClientManager {
         try {
             console.log('📡 Cargando propiedades desde Supabase...');
             
+            // Verificar si estamos usando el mock
+            const isUsingMock = window.supabase && window.supabase._isMock;
+            
             const { data: properties, error } = await supabase
                 .from('properties')
                 .select('*')
-                .eq('status', 'disponible');
+                .eq('status', 'disponible')
+                .order('created_at', { ascending: false });
 
             if (error) {
                 console.error('Error cargando propiedades:', error);
-                // Cargar datos de ejemplo si hay error
-                await this.loadExampleProperties();
+                if (!isUsingMock) {
+                    console.log('🔄 Intentando con datos locales...');
+                    await this.loadExampleProperties();
+                }
                 return;
             }
 
