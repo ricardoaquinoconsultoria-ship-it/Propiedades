@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Inmuebles</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ===== ESTILOS CLIENTE ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -309,18 +307,11 @@
     <script>
         // CONFIGURACIÓN SUPABASE
         const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhbmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1GXQm6L0Om6AZReeTK0e3Q81k-UQSVJAu3xMNQ';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1GXQm6L0Om6AZReeTK0e3Q81k-UQSVJAu3xMNQ';
         
-        // Inicializar Supabase con configuración optimizada
-        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: false
-            }
-        });
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // CLIENT MANAGER OPTIMIZADO
+        // CLIENT MANAGER
         class ModernClientManager {
             constructor() {
                 this.properties = [];
@@ -328,15 +319,12 @@
                 this.currentFilter = 'all';
                 this.map = null;
                 this.markers = [];
-                this.isLoading = false;
             }
 
             async init() {
-                console.time('Inicialización completa');
-                await this.setupEventListeners();
-                await this.initializeMap();
+                this.setupEventListeners();
+                this.initializeMap();
                 await this.loadProperties();
-                console.timeEnd('Inicialización completa');
             }
 
             setupEventListeners() {
@@ -410,8 +398,7 @@
                 try {
                     this.map = L.map('map').setView([18.7357, -70.1627], 8);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors',
-                        maxZoom: 19
+                        attribution: '© OpenStreetMap contributors'
                     }).addTo(this.map);
                 } catch (error) {
                     console.error('Error con mapa:', error);
@@ -419,68 +406,38 @@
             }
 
             async loadProperties() {
-                if (this.isLoading) return;
-                
-                this.isLoading = true;
-                const container = document.getElementById('propertiesGrid');
-                
                 try {
-                    console.time('Carga de propiedades');
+                    console.log('🔍 Cargando propiedades desde Supabase...');
                     
-                    // Mostrar loading
-                    container.innerHTML = `
-                        <div class="loading-spinner"></div>
-                        <p style="text-align: center; width: 100%;">Cargando propiedades...</p>
-                    `;
-
-                    // Consulta optimizada - solo campos necesarios
                     const { data: properties, error } = await window.supabase
                         .from('properties')
-                        .select('id, title, type, price, location, characteristics, images, status')
+                        .select('*')
                         .eq('status', 'disponible')
-                        .order('created_at', { ascending: false })
-                        .limit(50); // Limitar resultados para mejor performance
+                        .order('created_at', { ascending: false });
 
                     if (error) throw error;
 
-                    console.log(`✅ ${properties?.length || 0} propiedades cargadas desde Supabase`);
+                    console.log('📊 Propiedades recibidas:', properties);
                     
                     this.properties = properties || [];
                     this.filteredProperties = [...this.properties];
                     
-                    // Renderizar propiedades primero (más importante para el usuario)
                     this.renderProperties();
                     this.updatePropertiesCount();
-                    
-                    // Luego cargar el mapa (menos crítico)
-                    setTimeout(() => {
-                        this.renderMapMarkers();
-                    }, 100);
+                    this.renderMapMarkers();
                     
                 } catch (error) {
-                    console.error('Error cargando propiedades:', error);
+                    console.error('❌ Error cargando propiedades:', error);
                     this.properties = [];
                     this.filteredProperties = [];
                     this.renderProperties();
                     this.updatePropertiesCount();
-                } finally {
-                    this.isLoading = false;
-                    console.timeEnd('Carga de propiedades');
                 }
             }
 
             applyFilter(filter) {
                 this.currentFilter = filter;
-                
-                if (filter === 'all') {
-                    this.filteredProperties = [...this.properties];
-                } else {
-                    // Filtro optimizado
-                    this.filteredProperties = this.properties.filter(property => 
-                        property.type === filter
-                    );
-                }
-                
+                this.filteredProperties = filter === 'all' ? [...this.properties] : this.properties.filter(property => property.type === filter);
                 this.renderProperties();
                 this.updatePropertiesCount();
                 this.renderMapMarkers();
@@ -512,25 +469,27 @@
                     return;
                 }
 
-                // Usar DocumentFragment para mejor performance
-                const fragment = document.createDocumentFragment();
-                const tempDiv = document.createElement('div');
-                
-                tempDiv.innerHTML = this.filteredProperties.map(property => `
+                container.innerHTML = this.filteredProperties.map(property => {
+                    console.log('🖼️ Imágenes de propiedad:', property.id, property.images);
+                    
+                    // Obtener la primera imagen o usar una por defecto
+                    const firstImage = this.getFirstValidImage(property.images);
+                    
+                    return `
                     <div class="property-card" onclick="clientManager.showPropertyDetails(${property.id})">
                         <div class="property-image">
-                            <img src="${this.getOptimizedImage(property.images?.[0])}" 
+                            <img src="${firstImage}" 
                                  alt="${property.title}" 
                                  loading="lazy"
-                                 onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600'">
+                                 onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop'">
                             <div class="property-badge">${this.getTypeLabel(property.type)}</div>
                         </div>
                         <div class="property-info">
-                            <h3>${this.escapeHtml(property.title)}</h3>
+                            <h3>${property.title}</h3>
                             <div class="property-price">$${this.formatPrice(property.price)}</div>
                             <div class="property-address">
                                 <span>📍</span>
-                                <span>${this.escapeHtml(property.location?.address || 'Dirección no disponible')}</span>
+                                <span>${property.location?.address || 'Dirección no disponible'}</span>
                             </div>
                             <div class="property-features-preview">
                                 ${property.characteristics?.bedrooms > 0 ? `<span>🛏️ ${property.characteristics.bedrooms} hab.</span>` : ''}
@@ -540,14 +499,20 @@
                             <button class="view-details-btn">Ver Detalles</button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
+            }
 
-                while (tempDiv.firstChild) {
-                    fragment.appendChild(tempDiv.firstChild);
+            getFirstValidImage(images) {
+                if (!images || !Array.isArray(images) || images.length === 0) {
+                    return 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop';
                 }
-
-                container.innerHTML = '';
-                container.appendChild(fragment);
+                
+                // Buscar la primera imagen válida
+                const validImage = images.find(img => 
+                    img && typeof img === 'string' && img.startsWith('http')
+                );
+                
+                return validImage || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop';
             }
 
             renderMapMarkers() {
@@ -557,77 +522,41 @@
                 this.markers.forEach(marker => this.map.removeLayer(marker));
                 this.markers = [];
 
-                // Agrupar propiedades por ubicación para evitar superposición
-                const locationGroups = new Map();
-                
                 this.filteredProperties.forEach(property => {
                     if (property.location && property.location.lat && property.location.lng) {
-                        const key = `${property.location.lat.toFixed(4)}_${property.location.lng.toFixed(4)}`;
-                        if (!locationGroups.has(key)) {
-                            locationGroups.set(key, []);
-                        }
-                        locationGroups.get(key).push(property);
+                        const customIcon = L.divIcon({
+                            html: `<div style="background: #2563eb; color: white; padding: 8px; border-radius: 50%; font-size: 16px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🏠</div>`,
+                            className: 'property-marker',
+                            iconSize: [40, 40]
+                        });
+
+                        const firstImage = this.getFirstValidImage(property.images);
+                        
+                        const marker = L.marker([property.location.lat, property.location.lng], { icon: customIcon })
+                            .addTo(this.map)
+                            .bindPopup(`
+                                <div style="min-width: 200px;">
+                                    <img src="${firstImage}" 
+                                         alt="${property.title}" 
+                                         style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;"
+                                         onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop'">
+                                    <h4 style="margin: 8px 0; font-size: 14px;">${property.title}</h4>
+                                    <p style="margin: 4px 0; font-weight: bold; color: #2563eb;">$${this.formatPrice(property.price)}</p>
+                                    <button onclick="clientManager.showPropertyDetails(${property.id})" 
+                                            style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 8px;">
+                                        Ver Detalles
+                                    </button>
+                                </div>
+                            `);
+                        this.markers.push(marker);
                     }
                 });
 
-                // Crear marcadores
-                locationGroups.forEach((properties, key) => {
-                    const firstProperty = properties[0];
-                    const customIcon = L.divIcon({
-                        html: `<div style="background: #2563eb; color: white; padding: 8px; border-radius: 50%; font-size: 16px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${properties.length > 1 ? properties.length + '🏠' : '🏠'}</div>`,
-                        className: 'property-marker',
-                        iconSize: [40, 40]
-                    });
-
-                    const marker = L.marker([firstProperty.location.lat, firstProperty.location.lng], { icon: customIcon })
-                        .addTo(this.map)
-                        .bindPopup(this.createPopupContent(properties));
-                    
-                    this.markers.push(marker);
-                });
-
-                // Ajustar vista del mapa
                 if (this.markers.length > 0) {
                     const group = new L.featureGroup(this.markers);
                     this.map.fitBounds(group.getBounds().pad(0.1));
                 } else {
                     this.map.setView([18.7357, -70.1627], 8);
-                }
-            }
-
-            createPopupContent(properties) {
-                if (properties.length === 1) {
-                    const property = properties[0];
-                    return `
-                        <div style="min-width: 200px;">
-                            <img src="${this.getOptimizedImage(property.images?.[0])}" 
-                                 alt="${property.title}" 
-                                 style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;"
-                                 onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600'">
-                            <h4 style="margin: 8px 0; font-size: 14px;">${this.escapeHtml(property.title)}</h4>
-                            <p style="margin: 4px 0; font-weight: bold; color: #2563eb;">$${this.formatPrice(property.price)}</p>
-                            <button onclick="clientManager.showPropertyDetails(${property.id})" 
-                                    style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 8px;">
-                                Ver Detalles
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    return `
-                        <div style="min-width: 200px;">
-                            <h4 style="margin: 8px 0; font-size: 14px;">${properties.length} propiedades en esta ubicación</h4>
-                            ${properties.map(property => `
-                                <div style="border-bottom: 1px solid #eee; padding: 8px 0;">
-                                    <p style="margin: 0; font-weight: bold;">${this.escapeHtml(property.title)}</p>
-                                    <p style="margin: 4px 0; color: #2563eb;">$${this.formatPrice(property.price)}</p>
-                                    <button onclick="clientManager.showPropertyDetails(${property.id})" 
-                                            style="background: #2563eb; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 12px;">
-                                        Ver
-                                    </button>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
                 }
             }
 
@@ -652,11 +581,15 @@
                 const mainImage = document.getElementById('mainPropertyImage');
                 const thumbnailsContainer = document.getElementById('propertyThumbnails');
 
-                if (property.images && property.images.length > 0) {
-                    mainImage.src = this.getOptimizedImage(property.images[0]);
-                    thumbnailsContainer.innerHTML = property.images.map((image, index) => `
-                        <div class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${this.getOptimizedImage(image)}">
-                            <img src="${this.getOptimizedImage(image)}" alt="Miniatura ${index + 1}" loading="lazy">
+                // Obtener imágenes válidas
+                const validImages = this.getValidImages(property.images);
+                
+                if (validImages.length > 0) {
+                    mainImage.src = validImages[0];
+                    thumbnailsContainer.innerHTML = validImages.map((image, index) => `
+                        <div class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${image}">
+                            <img src="${image}" alt="Miniatura ${index + 1}" loading="lazy"
+                                 onerror="this.style.display='none'">
                         </div>
                     `).join('');
 
@@ -669,12 +602,19 @@
                         });
                     });
                 } else {
-                    mainImage.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600';
+                    // Imagen por defecto si no hay imágenes válidas
+                    mainImage.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop';
                     thumbnailsContainer.innerHTML = '';
                 }
             }
 
-            // Métodos de utilidad optimizados
+            getValidImages(images) {
+                if (!images || !Array.isArray(images)) return [];
+                return images.filter(img => 
+                    img && typeof img === 'string' && img.startsWith('http')
+                );
+            }
+
             getTypeLabel(type) {
                 const types = {
                     'casa': 'Casa', 
@@ -685,39 +625,15 @@
                 return types[type] || type;
             }
 
-            getOptimizedImage(url) {
-                if (!url) return 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600';
-                
-                // Optimizar imágenes de Unsplash si es posible
-                if (url.includes('unsplash.com')) {
-                    return url + '&w=600&q=80&fit=crop';
-                }
-                
-                return url;
-            }
-
             formatPrice(price) {
                 return new Intl.NumberFormat('es-DO').format(price || 0);
-            }
-
-            escapeHtml(unsafe) {
-                if (!unsafe) return '';
-                return unsafe
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
             }
         }
 
         // INICIALIZAR
         document.addEventListener('DOMContentLoaded', function() {
             window.clientManager = new ModernClientManager();
-            // Iniciar con un pequeño delay para permitir que la página se renderice primero
-            setTimeout(() => {
-                window.clientManager.init();
-            }, 100);
+            window.clientManager.init();
         });
     </script>
 </body>
