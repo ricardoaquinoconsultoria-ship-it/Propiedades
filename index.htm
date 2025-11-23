@@ -113,6 +113,14 @@
         /* Footer */
         .modern-footer { background: var(--text); color: white; text-align: center; padding: 30px 0; }
         
+        /* Loading y estados */
+        .loading { text-align: center; padding: 40px; color: var(--text-light); }
+        .image-loading { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .hero-content h2 { font-size: 2rem; }
@@ -157,7 +165,7 @@
             <div class="modal-body">
                 <div class="property-gallery">
                     <div class="main-image">
-                        <img id="mainPropertyImage" src="" alt="Imagen principal">
+                        <img id="mainPropertyImage" src="" alt="Imagen principal" loading="lazy">
                     </div>
                     <div class="image-thumbnails" id="propertyThumbnails"></div>
                 </div>
@@ -302,6 +310,7 @@
                 this.currentFilter = 'all';
                 this.map = null;
                 this.markers = [];
+                this.imageCache = new Map(); // Cache para imágenes ya cargadas
             }
 
             init() {
@@ -323,7 +332,7 @@
                     if (e.target === document.getElementById('propertyModal')) this.hidePropertyModal();
                 });
 
-                // BOTÓN INFORMACIÓN (sin alerta)
+                // BOTÓN INFORMACIÓN
                 document.querySelector('.btn-contact').addEventListener('click', () => {
                     // No hacer nada - solo mostrar información
                 });
@@ -350,6 +359,32 @@
                         document.getElementById('filterOptions').classList.add('hidden');
                     }
                 });
+
+                // Lazy loading para imágenes
+                this.setupLazyLoading();
+            }
+
+            setupLazyLoading() {
+                // Intersection Observer para lazy loading
+                if ('IntersectionObserver' in window) {
+                    const imageObserver = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const img = entry.target;
+                                img.src = img.dataset.src;
+                                img.classList.remove('image-loading');
+                                imageObserver.unobserve(img);
+                            }
+                        });
+                    });
+
+                    // Observar todas las imágenes con data-src
+                    document.addEventListener('DOMContentLoaded', () => {
+                        document.querySelectorAll('img[data-src]').forEach(img => {
+                            imageObserver.observe(img);
+                        });
+                    });
+                }
             }
 
             showAdminModal() {
@@ -450,7 +485,15 @@
                 container.innerHTML = this.filteredProperties.map(property => `
                     <div class="property-card" onclick="clientManager.showPropertyDetails(${property.id})">
                         <div class="property-image">
-                            <img src="${property.images && property.images[0] ? property.images[0] : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600'}" alt="${property.title}">
+                            <img 
+                                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='350' height='250' viewBox='0 0 350 250'%3E%3Crect width='350' height='250' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='18' fill='%2364748b'%3E🏠 Cargando...%3C/text%3E%3C/svg%3E"
+                                data-src="${this.getOptimizedImageUrl(property.images && property.images[0] ? property.images[0] : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80')}"
+                                alt="${property.title}"
+                                loading="lazy"
+                                class="image-loading"
+                                onload="this.classList.remove('image-loading')"
+                                onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80'"
+                            >
                             <div class="property-badge">${this.getTypeLabel(property.type)}</div>
                         </div>
                         <div class="property-info">
@@ -469,6 +512,36 @@
                         </div>
                     </div>
                 `).join('');
+
+                // Iniciar lazy loading después de renderizar
+                this.initLazyLoading();
+            }
+
+            getOptimizedImageUrl(url) {
+                // Si es una imagen de Supabase Storage, podemos optimizarla
+                if (url.includes('supabase.co/storage')) {
+                    // Aquí podrías agregar parámetros de optimización si Supabase lo permite
+                    return url;
+                }
+                return url;
+            }
+
+            initLazyLoading() {
+                // Cargar imágenes visibles inmediatamente
+                const lazyImages = document.querySelectorAll('img[data-src]');
+                
+                const imageObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src;
+                            img.classList.remove('image-loading');
+                            imageObserver.unobserve(img);
+                        }
+                    });
+                });
+
+                lazyImages.forEach(img => imageObserver.observe(img));
             }
 
             renderMapMarkers() {
@@ -488,7 +561,7 @@
                             .addTo(this.map)
                             .bindPopup(`
                                 <div style="min-width: 200px;">
-                                    <img src="${property.images && property.images[0] ? property.images[0] : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600'}" alt="${property.title}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
+                                    <img src="${property.images && property.images[0] ? property.images[0] : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80'}" alt="${property.title}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;" loading="lazy">
                                     <h4 style="margin: 8px 0; font-size: 14px;">${property.title}</h4>
                                     <p style="margin: 4px 0; font-weight: bold; color: #2563eb;">$${property.price.toLocaleString()}</p>
                                     <button onclick="clientManager.showPropertyDetails(${property.id})" 
@@ -532,13 +605,18 @@
                 const thumbnailsContainer = document.getElementById('propertyThumbnails');
 
                 if (property.images && property.images.length > 0) {
+                    // Usar la primera imagen como principal
                     mainImage.src = property.images[0];
+                    mainImage.loading = 'eager'; // Cargar inmediatamente ya que es visible
+                    
+                    // Crear thumbnails
                     thumbnailsContainer.innerHTML = property.images.map((image, index) => `
                         <div class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${image}">
-                            <img src="${image}" alt="Miniatura ${index + 1}">
+                            <img src="${image}" alt="Miniatura ${index + 1}" loading="lazy">
                         </div>
                     `).join('');
 
+                    // Event listeners para thumbnails
                     thumbnailsContainer.querySelectorAll('.thumbnail').forEach(thumb => {
                         thumb.addEventListener('click', () => {
                             const imageSrc = thumb.getAttribute('data-image');
@@ -549,7 +627,7 @@
                     });
                 } else {
                     // Imagen por defecto si no hay imágenes
-                    mainImage.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600';
+                    mainImage.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80';
                     thumbnailsContainer.innerHTML = '';
                 }
             }
