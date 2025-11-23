@@ -76,7 +76,7 @@ class AdminManager {
         // Cerrar sesión
         document.getElementById('logoutBtn').addEventListener('click', () => {
             if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                window.location.href = 'index.html';
+                window.location.href = './index.html';
             }
         });
 
