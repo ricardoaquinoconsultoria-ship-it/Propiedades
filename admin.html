@@ -141,15 +141,7 @@
                             </div>
                         </div>
 
-                        <div class="form-section">
-                            <h3>🖼️ Imágenes (Opcional)</h3>
-                            <div class="form-group">
-                                <label for="imageUrls">URLs de Imágenes (Opcional):</label>
-                                <textarea id="imageUrls" placeholder="https://ejemplo.com/imagen1.jpg&#10;https://ejemplo.com/imagen2.jpg" rows="3"></textarea>
-                                <small style="color: var(--text-light);">Opcional: Ingresa URLs de imágenes (una por línea). Si no agregas imágenes, se usarán imágenes por defecto.</small>
-                            </div>
-                            <div class="image-preview" id="imagePreview"></div>
-                        </div>
+                        <!-- SECCIÓN DE IMÁGENES ELIMINADA -->
 
                         <button type="submit" class="btn-primary btn-submit">
                             <span id="submitText">🏠 Agregar Propiedad</span>
@@ -232,11 +224,6 @@
                         window.location.href = './';
                     }
                 });
-
-                // Preview de imágenes cuando se escriben URLs
-                document.getElementById('imageUrls').addEventListener('input', (e) => {
-                    this.updateImagePreviewFromUrls(e.target.value);
-                });
             }
 
             showSection(sectionId) {
@@ -279,11 +266,8 @@
             }
 
             getFormData() {
-                const imageUrls = this.getValidImageUrls();
-                
-                // Si no hay imágenes, usar imágenes por defecto según el tipo
+                // Asignar imágenes por defecto automáticamente según el tipo
                 const defaultImages = this.getDefaultImages(document.getElementById('propertyType').value);
-                const finalImages = imageUrls.length > 0 ? imageUrls : defaultImages;
                 
                 return {
                     title: document.getElementById('propertyTitle').value.trim(),
@@ -304,67 +288,40 @@
                         garden: document.getElementById('propertyGarden').checked || false
                     },
                     status: 'disponible',
-                    images: finalImages,
+                    images: defaultImages, // Siempre imágenes por defecto
                     created_at: new Date().toISOString()
                 };
             }
 
             getDefaultImages(propertyType) {
-                // Imágenes por defecto según el tipo de propiedad
+                // Imágenes por defecto según el tipo de propiedad - URLs públicas que funcionan en todos los navegadores
                 const defaultImages = {
                     'casa': [
                         'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop'
+                        'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop',
+                        'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop'
                     ],
                     'apartamento': [
                         'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&h=600&fit=crop'
+                        'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&h=600&fit=crop',
+                        'https://images.unsplash.com/photo-1567496898669-ee935f5f647a?w=800&h=600&fit=crop'
                     ],
                     'oficina': [
                         'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop'
+                        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop',
+                        'https://images.unsplash.com/photo-1568992688065-536aad8a12f6?w=800&h=600&fit=crop'
                     ],
                     'solar': [
                         'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=800&h=600&fit=crop'
+                        'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=800&h=600&fit=crop',
+                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop'
                     ]
                 };
                 
                 return defaultImages[propertyType] || [
-                    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop'
+                    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
+                    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=600&fit=crop'
                 ];
-            }
-
-            getValidImageUrls() {
-                const urlsText = document.getElementById('imageUrls').value.trim();
-                if (!urlsText) return [];
-                
-                return urlsText
-                    .split('\n')
-                    .map(url => url.trim())
-                    .filter(url => url && this.isValidImageUrl(url))
-                    .slice(0, 5);
-            }
-
-            isValidImageUrl(url) {
-                try {
-                    new URL(url);
-                    return url.match(/\.(jpeg|jpg|gif|png|webp)$/i) !== null;
-                } catch (_) {
-                    return false;
-                }
-            }
-
-            updateImagePreviewFromUrls(urlsText) {
-                const validUrls = this.getValidImageUrls();
-                const previewContainer = document.getElementById('imagePreview');
-                
-                previewContainer.innerHTML = validUrls.map((url, index) => `
-                    <div class="preview-item">
-                        <img src="${url}" alt="Preview ${index + 1}" loading="lazy" onerror="this.style.display='none'">
-                        <span class="image-number">${index + 1}</span>
-                    </div>
-                `).join('');
             }
 
             validateForm(formData) {
@@ -492,12 +449,6 @@
                 document.getElementById('propertyPool').checked = property.characteristics?.pool || false;
                 document.getElementById('propertyGarden').checked = property.characteristics?.garden || false;
 
-                // Mostrar imágenes existentes (si las hay)
-                if (property.images && property.images.length > 0) {
-                    document.getElementById('imageUrls').value = property.images.join('\n');
-                    this.updateImagePreviewFromUrls(property.images.join('\n'));
-                }
-
                 this.showSection('add-property');
                 document.querySelector('.sidebar-menu a[href="#add-property"]').click();
                 document.querySelector('.btn-submit').innerHTML = '<span id="submitText">🔄 Actualizar Propiedad</span><span id="submitLoading" class="hidden loading-spinner"></span>';
@@ -554,8 +505,6 @@
 
             resetForm() {
                 document.getElementById('propertyForm').reset();
-                document.getElementById('imageUrls').value = '';
-                document.getElementById('imagePreview').innerHTML = '';
                 this.editingProperty = null;
                 
                 document.querySelector('.btn-submit').innerHTML = '<span id="submitText">🏠 Agregar Propiedad</span><span id="submitLoading" class="hidden loading-spinner"></span>';
