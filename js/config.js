@@ -14,7 +14,6 @@ try {
             .then(({ count, error }) => {
                 if (error) {
                     console.error('❌ Error conectando a Supabase:', error);
-                    alert('⚠️ Error conectando a la base de datos. Verifica la conexión.');
                 } else {
                     console.log('✅ Conexión a Supabase exitosa. Tabla properties disponible');
                 }
