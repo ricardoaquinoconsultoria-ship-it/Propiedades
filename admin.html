@@ -1030,4 +1030,263 @@
                         'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop'
                     ],
                     'apartamento': [
-                        'https://images
+                        'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop'
+                    ],
+                    'oficina': [
+                        'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&h=600&fit=crop'
+                    ],
+                    'solar': [
+                        'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=600&fit=crop'
+                    ]
+                };
+                
+                return defaultImages[propertyType] || [
+                    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop'
+                ];
+            }
+
+            validateForm(formData) {
+                const required = [
+                    { field: formData.title, name: 'título', element: 'propertyTitle' },
+                    { field: formData.type, name: 'tipo', element: 'propertyType' },
+                    { field: formData.price > 0, name: 'precio', element: 'propertyPrice' },
+                    { field: formData.description, name: 'descripción', element: 'propertyDescription' },
+                    { field: formData.location.address, name: 'dirección', element: 'propertyAddress' },
+                    { field: formData.characteristics.area > 0, name: 'área', element: 'propertyArea' }
+                ];
+
+                for (let req of required) {
+                    if (!req.field) {
+                        alert(`❌ El campo "${req.name}" es requerido`);
+                        document.getElementById(req.element).focus();
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            async initializeLocationMap() {
+                try {
+                    this.locationMap = L.map('locationMap').setView([18.7357, -70.1627], 12);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(this.locationMap);
+
+                    this.locationMarker = L.marker([18.7357, -70.1627])
+                        .addTo(this.locationMap)
+                        .bindPopup('Ubicación de la propiedad')
+                        .openPopup();
+
+                    this.locationMap.on('click', (e) => {
+                        const { lat, lng } = e.latlng;
+                        this.locationMap.removeLayer(this.locationMarker);
+                        this.locationMarker = L.marker([lat, lng]).addTo(this.locationMap).bindPopup('Ubicación seleccionada').openPopup();
+                        document.getElementById('propertyLat').value = lat;
+                        document.getElementById('propertyLng').value = lng;
+                        document.getElementById('selectedCoordinates').textContent = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+                    });
+                } catch (error) {
+                    console.error('Error inicializando mapa:', error);
+                }
+            }
+
+            updateDashboard() {
+                document.getElementById('totalProperties').textContent = this.properties.length;
+                document.getElementById('availableProperties').textContent = this.properties.filter(p => p.status === 'disponible').length;
+                document.getElementById('houseCount').textContent = this.properties.filter(p => p.type === 'casa').length;
+                document.getElementById('apartmentCount').textContent = this.properties.filter(p => p.type === 'apartamento').length;
+            }
+
+            renderPropertiesList() {
+                const container = document.getElementById('propertiesList');
+                if (!container) return;
+
+                if (this.properties.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-properties">
+                            <h3>🏠 No hay propiedades registradas</h3>
+                            <p>Agrega tu primera propiedad</p>
+                            <button onclick="adminManager.showSection('add-property'); document.querySelector('.sidebar-menu a[href=\\'#add-property\\']').click()" class="btn-primary">
+                                ➕ Agregar Primera Propiedad
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.properties.map(property => `
+                    <div class="property-item">
+                        <div class="property-info">
+                            <h3>${this.escapeHtml(property.title)}</h3>
+                            <div class="property-meta">
+                                <span class="price">$${this.formatPrice(property.price)}</span>
+                                <span class="type">${this.getTypeLabel(property.type)}</span>
+                                <span class="status ${property.status}">${property.status}</span>
+                            </div>
+                            <div class="property-address">
+                                <span>📍</span>
+                                <span>${this.escapeHtml(property.location?.address || 'Dirección no disponible')}</span>
+                            </div>
+                            <div class="property-area">
+                                <small>Área: ${property.characteristics?.area || '0'} m²</small>
+                            </div>
+                        </div>
+                        <div class="property-actions">
+                            <button class="btn-edit" onclick="adminManager.editProperty(${property.id})">✏️ Editar</button>
+                            <button class="btn-delete" onclick="adminManager.deleteProperty(${property.id})">🗑️ Eliminar</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            getTypeLabel(type) {
+                const types = { 'casa': 'Casa', 'apartamento': 'Apartamento', 'oficina': 'Oficina', 'solar': 'Solar' };
+                return types[type] || type;
+            }
+
+            editProperty(propertyId) {
+                const property = this.properties.find(p => p.id === propertyId);
+                if (!property) {
+                    alert('❌ Propiedad no encontrada');
+                    return;
+                }
+
+                this.editingProperty = property;
+                this.selectedImages = [];
+                
+                document.getElementById('propertyTitle').value = property.title || '';
+                document.getElementById('propertyType').value = property.type || '';
+                document.getElementById('propertyPrice').value = property.price || 0;
+                document.getElementById('propertyDescription').value = property.description || '';
+                document.getElementById('propertyAddress').value = property.location?.address || '';
+                document.getElementById('propertyLat').value = property.location?.lat || 18.7357;
+                document.getElementById('propertyLng').value = property.location?.lng || -70.1627;
+                document.getElementById('selectedCoordinates').textContent = `Lat: ${property.location?.lat || 18.7357}, Lng: ${property.location?.lng || -70.1627}`;
+                document.getElementById('propertyBedrooms').value = property.characteristics?.bedrooms || 0;
+                document.getElementById('propertyBathrooms').value = property.characteristics?.bathrooms || 0;
+                document.getElementById('propertyArea').value = property.characteristics?.area || 100;
+                document.getElementById('propertyParking').checked = property.characteristics?.parking || false;
+                document.getElementById('propertyPool').checked = property.characteristics?.pool || false;
+                document.getElementById('propertyGarden').checked = property.characteristics?.garden || false;
+
+                if (property.images && property.images.length > 0) {
+                    property.images.forEach((imageSrc, index) => {
+                        this.selectedImages.push({
+                            id: Date.now() + index,
+                            src: imageSrc,
+                            file: null,
+                            name: `Imagen ${index + 1}`
+                        });
+                    });
+                    this.updateImagePreview();
+                }
+
+                this.showSection('add-property');
+                document.querySelector('.sidebar-menu a[href="#add-property"]').click();
+                document.querySelector('.btn-submit').innerHTML = '<span id="submitText">🔄 Actualizar Propiedad</span><span id="submitLoading" class="hidden loading-spinner"></span>';
+            }
+
+            async handleUpdateProperty(propertyId) {
+                if (this.isLoading) return;
+                
+                try {
+                    this.isLoading = true;
+                    this.setSubmitButtonLoading(true);
+
+                    const formData = this.getFormData();
+                    if (!this.validateForm(formData)) return;
+
+                    const { error } = await window.supabase
+                        .from('properties')
+                        .update(formData)
+                        .eq('id', propertyId);
+
+                    if (error) throw error;
+
+                    alert('✅ Propiedad actualizada exitosamente!');
+                    await this.loadPropertiesFromSupabase();
+                    this.resetForm();
+                    this.showSection('properties');
+                    
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                } finally {
+                    this.isLoading = false;
+                    this.setSubmitButtonLoading(false);
+                    this.editingProperty = null;
+                }
+            }
+
+            async deleteProperty(propertyId) {
+                if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
+                    try {
+                        const { error } = await window.supabase
+                            .from('properties')
+                            .delete()
+                            .eq('id', propertyId);
+
+                        if (error) throw error;
+
+                        alert('🗑️ Propiedad eliminada exitosamente');
+                        await this.loadPropertiesFromSupabase();
+                    } catch (error) {
+                        alert('❌ Error: ' + error.message);
+                    }
+                }
+            }
+
+            resetForm() {
+                document.getElementById('propertyForm').reset();
+                this.selectedImages = [];
+                this.updateImagePreview();
+                this.editingProperty = null;
+                
+                document.querySelector('.btn-submit').innerHTML = '<span id="submitText">🏠 Agregar Propiedad</span><span id="submitLoading" class="hidden loading-spinner"></span>';
+                
+                if (this.locationMarker) {
+                    this.locationMap.removeLayer(this.locationMarker);
+                    this.locationMarker = L.marker([18.7357, -70.1627]).addTo(this.locationMap).bindPopup('Ubicación de la propiedad');
+                    document.getElementById('propertyLat').value = 18.7357;
+                    document.getElementById('propertyLng').value = -70.1627;
+                    document.getElementById('selectedCoordinates').textContent = 'Lat: 18.7357, Lng: -70.1627';
+                }
+            }
+
+            setSubmitButtonLoading(loading) {
+                const submitText = document.getElementById('submitText');
+                const submitLoading = document.getElementById('submitLoading');
+                const submitBtn = document.querySelector('.btn-submit');
+                
+                submitBtn.disabled = loading;
+                if (loading) {
+                    submitText.classList.add('hidden');
+                    submitLoading.classList.remove('hidden');
+                } else {
+                    submitText.classList.remove('hidden');
+                    submitLoading.classList.add('hidden');
+                }
+            }
+
+            formatPrice(price) {
+                return new Intl.NumberFormat('es-DO').format(price || 0);
+            }
+
+            escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.adminManager = new AdminManager();
+            window.adminManager.init();
+        });
+    </script>
+</body>
+</html>
