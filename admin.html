@@ -4,17 +4,134 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
-    <!-- RUTAS CORREGIDAS -->
-    <link rel="stylesheet" href="./css/admin.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== ESTILOS ADMIN ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #2563eb; --primary-dark: #1d4ed8; --secondary: #64748b; --accent: #f59e0b;
+            --danger: #dc2626; --success: #16a34a; --background: #f8fafc; --surface: #ffffff;
+            --text: #1e293b; --text-light: #64748b; --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        body { font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text); background: var(--background); }
+        .hidden { display: none !important; }
+        
+        /* Header Admin */
+        .admin-header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-lg); }
+        .admin-header h1 { font-size: 1.8rem; font-weight: 700; }
+        .admin-header nav { display: flex; align-items: center; gap: 1rem; }
+        .btn-store { background: rgba(255, 255, 255, 0.2); color: white; text-decoration: none; padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 600; transition: all 0.3s ease; }
+        .btn-store:hover { background: rgba(255, 255, 255, 0.3); }
+        .btn-logout { background: var(--danger); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
+        .btn-logout:hover { background: #b91c1c; }
+        
+        /* Layout */
+        .admin-container { min-height: 100vh; display: flex; flex-direction: column; }
+        .admin-layout { display: flex; flex: 1; }
+        
+        /* Sidebar */
+        .sidebar { width: 280px; background: linear-gradient(135deg, var(--text) 0%, #334155 100%); color: white; padding: 2rem 0; }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin-bottom: 0.5rem; }
+        .sidebar-menu a { display: flex; align-items: center; gap: 1rem; color: #e2e8f0; text-decoration: none; padding: 1rem 2rem; transition: all 0.3s ease; border-left: 4px solid transparent; font-weight: 500; }
+        .sidebar-menu a:hover { background: rgba(255, 255, 255, 0.1); color: white; border-left-color: var(--primary); }
+        .sidebar-menu a.active { background: rgba(255, 255, 255, 0.15); color: white; border-left-color: var(--primary); font-weight: 600; }
+        
+        /* Main Content */
+        .admin-main { flex: 1; padding: 2rem; background: var(--background); overflow-y: auto; }
+        .admin-section { background: var(--surface); border-radius: 16px; padding: 2rem; box-shadow: var(--shadow); margin-bottom: 2rem; }
+        .admin-section h2 { color: var(--text); margin-bottom: 1.5rem; font-size: 1.5rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; }
+        
+        /* Dashboard */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: var(--shadow-lg); }
+        .stat-card h3 { font-size: 2rem; margin-bottom: 0.5rem; font-weight: 700; }
+        .stat-card p { opacity: 0.9; font-size: 0.9rem; }
+        
+        /* Formularios */
+        .property-form { max-width: 100%; }
+        .form-section { background: var(--background); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border-left: 4px solid var(--primary); }
+        .form-section h3 { color: var(--text); margin-bottom: 1.5rem; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; transition: all 0.3s ease; background: var(--surface); font-family: inherit; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
+        .checkbox-group label { margin-bottom: 0; font-weight: 500; cursor: pointer; }
+        
+        /* Mapa */
+        .map-selector { margin-top: 1rem; }
+        .map-selector p { margin-bottom: 1rem; color: var(--text-light); font-size: 0.9rem; }
+        #locationMap { height: 300px; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; border: 2px solid var(--border); }
+        .coordinates-display { background: var(--background); padding: 1rem; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.9rem; color: var(--text); border: 1px solid var(--border); }
+        .coordinates-display span:first-child { font-weight: 600; color: var(--text-light); }
+        .coordinates-display span:last-child { color: var(--primary); font-weight: 600; }
+        
+        /* Imágenes */
+        .image-upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 3rem 2rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--background); margin-bottom: 1.5rem; }
+        .image-upload-area:hover { border-color: var(--primary); background: rgba(37, 99, 235, 0.05); }
+        .upload-placeholder span { font-size: 3rem; color: var(--primary); display: block; margin-bottom: 1rem; }
+        .upload-placeholder p { color: var(--text-light); margin: 0 0 0.5rem 0; font-size: 1.1rem; }
+        .image-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .preview-item { position: relative; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+        .preview-item img { width: 100%; height: 120px; object-fit: cover; display: block; }
+        .remove-image { position: absolute; top: 5px; right: 5px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+        .remove-image:hover { background: #b91c1c; }
+        .image-number { position: absolute; bottom: 5px; left: 5px; background: rgba(0, 0, 0, 0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+        
+        /* Botones */
+        .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: all 0.3s ease; width: 100%; margin-top: 1rem; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .btn-submit { background: linear-gradient(135deg, var(--success) 0%, #15803d 100%); font-size: 1.1rem; padding: 16px 28px; }
+        
+        /* Lista Propiedades */
+        .properties-list { margin-top: 1.5rem; }
+        .property-item { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 1rem; background: var(--surface); transition: all 0.3s ease; }
+        .property-item:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: var(--primary); }
+        .property-info h3 { color: var(--text); margin-bottom: 0.5rem; font-size: 1.2rem; }
+        .property-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        .price { font-weight: 700; color: var(--primary); font-size: 1.1rem; }
+        .type { background: var(--accent); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+        .status { padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+        .status.disponible { background: var(--success); color: white; }
+        .property-address { color: var(--text-light); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+        .property-actions { display: flex; gap: 0.5rem; }
+        .btn-edit { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.3s ease; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-edit:hover { background: var(--primary-dark); }
+        .btn-delete { background: var(--danger); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.3s ease; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-delete:hover { background: #b91c1c; }
+        
+        .no-properties { text-align: center; color: var(--text-light); padding: 3rem; font-size: 1.1rem; background: var(--surface); border-radius: 12px; border: 2px dashed var(--border); }
+        
+        .required-field::after { content: " *"; color: #dc2626; }
+        
+        @media (max-width: 768px) {
+            .admin-layout { flex-direction: column; }
+            .sidebar { width: 100%; padding: 1rem 0; }
+            .sidebar-menu { display: flex; overflow-x: auto; padding: 0 1rem; }
+            .sidebar-menu li { margin-bottom: 0; margin-right: 1rem; flex-shrink: 0; }
+            .sidebar-menu a { white-space: nowrap; border-left: none; border-bottom: 4px solid transparent; padding: 0.8rem 1rem; }
+            .sidebar-menu a.active { border-left: none; border-bottom-color: var(--primary); }
+            .admin-header { flex-direction: column; gap: 1rem; padding: 1rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .property-item { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .property-actions { align-self: stretch; justify-content: space-between; }
+            .property-actions button { flex: 1; justify-content: center; }
+            .admin-main { padding: 1rem; }
+        }
+    </style>
 </head>
 <body>
     <div class="admin-container">
         <header class="admin-header">
             <h1>⚙️ Panel de Administración</h1>
             <nav>
-                <a href="./index.html" class="btn-store">🏪 Ver Tienda</a>
+                <a href="index.html" class="btn-store">🏪 Ver Tienda</a>
                 <button id="logoutBtn" class="btn-logout">🚪 Cerrar Sesión</button>
             </nav>
         </header>
@@ -29,42 +146,24 @@
             </aside>
 
             <main class="admin-main">
-                <!-- Dashboard -->
                 <section id="dashboard" class="admin-section">
                     <h2>📊 Dashboard</h2>
                     <div class="stats-grid">
-                        <div class="stat-card">
-                            <h3 id="totalProperties">0</h3>
-                            <p>Total Propiedades</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3 id="availableProperties">0</h3>
-                            <p>Disponibles</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3 id="houseCount">0</h3>
-                            <p>Casas</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3 id="apartmentCount">0</h3>
-                            <p>Apartamentos</p>
-                        </div>
+                        <div class="stat-card"><h3 id="totalProperties">0</h3><p>Total Propiedades</p></div>
+                        <div class="stat-card"><h3 id="availableProperties">0</h3><p>Disponibles</p></div>
+                        <div class="stat-card"><h3 id="houseCount">0</h3><p>Casas</p></div>
+                        <div class="stat-card"><h3 id="apartmentCount">0</h3><p>Apartamentos</p></div>
                     </div>
                 </section>
 
-                <!-- Gestionar Propiedades -->
                 <section id="properties" class="admin-section hidden">
                     <h2>🏠 Gestionar Propiedades</h2>
-                    <div class="properties-list" id="propertiesList">
-                        <p>Cargando propiedades...</p>
-                    </div>
+                    <div class="properties-list" id="propertiesList"><p>Cargando propiedades...</p></div>
                 </section>
 
-                <!-- Agregar Propiedad -->
                 <section id="add-property" class="admin-section hidden">
                     <h2>➕ Agregar Nueva Propiedad</h2>
                     <form id="propertyForm" class="property-form">
-                        <!-- Información Básica -->
                         <div class="form-section">
                             <h3>📝 Información Básica</h3>
                             <div class="form-group">
@@ -93,7 +192,6 @@
                             </div>
                         </div>
 
-                        <!-- Características -->
                         <div class="form-section">
                             <h3>🏠 Características</h3>
                             <div class="form-row">
@@ -107,29 +205,22 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="propertyArea" class="required-field">Área (m²):</label>
-                                    <input type="number" id="propertyArea" placeholder="Ej: 120 (metros cuadrados)" required min="1" step="1">
-                                    <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 0.3rem;">
-                                        Ingresa el área total en metros cuadrados
-                                    </small>
+                                    <input type="number" id="propertyArea" placeholder="Ej: 120" required min="1">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group checkbox-group">
-                                    <input type="checkbox" id="propertyParking">
-                                    <label for="propertyParking">Estacionamiento</label>
+                                    <input type="checkbox" id="propertyParking"><label for="propertyParking">Estacionamiento</label>
                                 </div>
                                 <div class="form-group checkbox-group">
-                                    <input type="checkbox" id="propertyPool">
-                                    <label for="propertyPool">Piscina</label>
+                                    <input type="checkbox" id="propertyPool"><label for="propertyPool">Piscina</label>
                                 </div>
                                 <div class="form-group checkbox-group">
-                                    <input type="checkbox" id="propertyGarden">
-                                    <label for="propertyGarden">Jardín</label>
+                                    <input type="checkbox" id="propertyGarden"><label for="propertyGarden">Jardín</label>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Ubicación con Mapa -->
                         <div class="form-section">
                             <h3>📍 Ubicación en el Mapa</h3>
                             <div class="form-group">
@@ -148,7 +239,6 @@
                             </div>
                         </div>
 
-                        <!-- Galería de Imágenes -->
                         <div class="form-section">
                             <h3>🖼️ Galería de Imágenes (Máximo 5)</h3>
                             <div class="image-upload-area" id="imageUploadArea">
@@ -158,9 +248,7 @@
                                 </div>
                                 <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
                             </div>
-                            <div class="image-preview" id="imagePreview">
-                                <!-- Previsualizaciones de imágenes se generarán aquí -->
-                            </div>
+                            <div class="image-preview" id="imagePreview"></div>
                         </div>
 
                         <button type="submit" class="btn-primary btn-submit">🏠 Agregar Propiedad</button>
@@ -170,10 +258,432 @@
         </div>
     </div>
 
-    <!-- Scripts CON RUTAS CORREGIDAS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./js/config.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="./js/admin.js"></script>
+    <script>
+        // CONFIGURACIÓN SUPABASE
+        const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1GXQm6L0Om6AZReeTK0e3Q81k-UQSVJAu3xMNQ';
+        
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        class AdminManager {
+            constructor() {
+                this.properties = [];
+                this.locationMap = null;
+                this.locationMarker = null;
+                this.selectedImages = [];
+                this.maxImages = 5;
+                this.editingProperty = null;
+            }
+
+            async init() {
+                console.log('🔄 Inicializando AdminManager...');
+                await this.setupEventListeners();
+                await this.initializeLocationMap();
+                await this.loadPropertiesFromSupabase();
+                this.setupImageUpload();
+                console.log('✅ AdminManager inicializado');
+            }
+
+            async loadPropertiesFromSupabase() {
+                try {
+                    console.log('📡 Cargando propiedades desde Supabase...');
+                    const { data: properties, error } = await window.supabase
+                        .from('properties')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    this.properties = properties || [];
+                    console.log(`✅ ${this.properties.length} propiedades cargadas`);
+                    this.updateDashboard();
+                    this.renderPropertiesList();
+                } catch (error) {
+                    console.error('Error cargando propiedades:', error);
+                    alert('❌ Error cargando propiedades: ' + error.message);
+                }
+            }
+
+            setupEventListeners() {
+                // Navegación
+                document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const target = link.getAttribute('href').substring(1);
+                        this.showSection(target);
+                        document.querySelectorAll('.sidebar-menu a').forEach(l => l.classList.remove('active'));
+                        link.classList.add('active');
+                    });
+                });
+
+                // Formulario
+                document.getElementById('propertyForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (this.editingProperty) {
+                        this.handleUpdateProperty(this.editingProperty.id);
+                    } else {
+                        this.handleAddProperty();
+                    }
+                });
+
+                // Cerrar sesión
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                        window.location.href = 'index.html';
+                    }
+                });
+
+                // Validación
+                document.getElementById('propertyArea').addEventListener('input', (e) => {
+                    this.validateAreaField(e.target);
+                });
+            }
+
+            showSection(sectionId) {
+                document.querySelectorAll('.admin-section').forEach(section => {
+                    section.classList.add('hidden');
+                });
+                const targetSection = document.getElementById(sectionId);
+                if (targetSection) targetSection.classList.remove('hidden');
+            }
+
+            async handleAddProperty() {
+                const submitBtn = document.querySelector('.btn-submit');
+                const originalText = submitBtn.innerHTML;
+                
+                try {
+                    submitBtn.innerHTML = '⏳ Guardando...';
+                    submitBtn.disabled = true;
+
+                    const formData = this.getFormData();
+                    if (!this.validateForm(formData)) return;
+
+                    console.log('📤 Enviando propiedad a Supabase...');
+                    const { data, error } = await window.supabase
+                        .from('properties')
+                        .insert([formData])
+                        .select();
+
+                    if (error) throw error;
+
+                    console.log('✅ Propiedad agregada:', data);
+                    alert('✅ Propiedad agregada exitosamente!');
+                    await this.loadPropertiesFromSupabase();
+                    this.resetForm();
+                    this.showSection('properties');
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('❌ Error: ' + error.message);
+                } finally {
+                    submitBtn.innerHTML = '🏠 Agregar Propiedad';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            getFormData() {
+                return {
+                    title: document.getElementById('propertyTitle').value.trim(),
+                    type: document.getElementById('propertyType').value,
+                    price: parseFloat(document.getElementById('propertyPrice').value) || 0,
+                    description: document.getElementById('propertyDescription').value.trim(),
+                    location: {
+                        address: document.getElementById('propertyAddress').value.trim(),
+                        lat: parseFloat(document.getElementById('propertyLat').value) || 18.7357,
+                        lng: parseFloat(document.getElementById('propertyLng').value) || -70.1627
+                    },
+                    characteristics: {
+                        bedrooms: parseInt(document.getElementById('propertyBedrooms').value) || 0,
+                        bathrooms: parseInt(document.getElementById('propertyBathrooms').value) || 0,
+                        area: parseInt(document.getElementById('propertyArea').value) || 100,
+                        parking: document.getElementById('propertyParking').checked || false,
+                        pool: document.getElementById('propertyPool').checked || false,
+                        garden: document.getElementById('propertyGarden').checked || false
+                    },
+                    status: 'disponible',
+                    images: this.selectedImages.map(img => img.src),
+                    created_at: new Date().toISOString()
+                };
+            }
+
+            validateForm(formData) {
+                const required = [
+                    { field: formData.title, name: 'título', element: 'propertyTitle' },
+                    { field: formData.type, name: 'tipo', element: 'propertyType' },
+                    { field: formData.price > 0, name: 'precio', element: 'propertyPrice' },
+                    { field: formData.description, name: 'descripción', element: 'propertyDescription' },
+                    { field: formData.location.address, name: 'dirección', element: 'propertyAddress' },
+                    { field: formData.characteristics.area > 0, name: 'área', element: 'propertyArea' }
+                ];
+
+                for (let req of required) {
+                    if (!req.field) {
+                        alert(`❌ El campo "${req.name}" es requerido`);
+                        document.getElementById(req.element).focus();
+                        return false;
+                    }
+                }
+
+                if (this.selectedImages.length === 0) {
+                    alert('❌ Debes agregar al menos una imagen');
+                    return false;
+                }
+
+                return true;
+            }
+
+            validateAreaField(field) {
+                field.style.borderColor = field.value && parseInt(field.value) > 0 ? '#16a34a' : '#dc2626';
+            }
+
+            async initializeLocationMap() {
+                try {
+                    this.locationMap = L.map('locationMap').setView([18.7357, -70.1627], 12);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(this.locationMap);
+
+                    this.locationMarker = L.marker([18.7357, -70.1627])
+                        .addTo(this.locationMap)
+                        .bindPopup('Ubicación de la propiedad')
+                        .openPopup();
+
+                    this.locationMap.on('click', (e) => {
+                        const { lat, lng } = e.latlng;
+                        this.locationMap.removeLayer(this.locationMarker);
+                        this.locationMarker = L.marker([lat, lng]).addTo(this.locationMap).bindPopup('Ubicación seleccionada').openPopup();
+                        document.getElementById('propertyLat').value = lat;
+                        document.getElementById('propertyLng').value = lng;
+                        document.getElementById('selectedCoordinates').textContent = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+                    });
+                } catch (error) {
+                    console.error('Error inicializando mapa:', error);
+                }
+            }
+
+            setupImageUpload() {
+                const uploadArea = document.getElementById('imageUploadArea');
+                const fileInput = document.getElementById('imageUpload');
+
+                uploadArea.addEventListener('click', () => {
+                    if (this.selectedImages.length >= this.maxImages) {
+                        alert(`❌ Límite de ${this.maxImages} imágenes alcanzado`);
+                        return;
+                    }
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    this.handleImageFiles(e.target.files);
+                });
+            }
+
+            handleImageFiles(files) {
+                const remaining = this.maxImages - this.selectedImages.length;
+                const filesToProcess = Array.from(files).slice(0, remaining);
+
+                filesToProcess.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.selectedImages.push({
+                                id: Date.now() + Math.random(),
+                                src: e.target.result,
+                                file: file
+                            });
+                            this.updateImagePreview();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            updateImagePreview() {
+                const previewContainer = document.getElementById('imagePreview');
+                const uploadArea = document.getElementById('imageUploadArea');
+                
+                uploadArea.style.display = this.selectedImages.length > 0 ? 'none' : 'flex';
+                
+                previewContainer.innerHTML = this.selectedImages.map((image, index) => `
+                    <div class="preview-item">
+                        <img src="${image.src}" alt="Preview ${index + 1}">
+                        <button type="button" class="remove-image" data-id="${image.id}">×</button>
+                        <span class="image-number">${index + 1}</span>
+                    </div>
+                `).join('');
+
+                previewContainer.querySelectorAll('.remove-image').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.removeImage(btn.getAttribute('data-id'));
+                    });
+                });
+            }
+
+            removeImage(id) {
+                this.selectedImages = this.selectedImages.filter(img => img.id != id);
+                this.updateImagePreview();
+            }
+
+            updateDashboard() {
+                document.getElementById('totalProperties').textContent = this.properties.length;
+                document.getElementById('availableProperties').textContent = this.properties.filter(p => p.status === 'disponible').length;
+                document.getElementById('houseCount').textContent = this.properties.filter(p => p.type === 'casa').length;
+                document.getElementById('apartmentCount').textContent = this.properties.filter(p => p.type === 'apartamento').length;
+            }
+
+            renderPropertiesList() {
+                const container = document.getElementById('propertiesList');
+                if (!container) return;
+
+                if (this.properties.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-properties">
+                            <h3>🏠 No hay propiedades registradas</h3>
+                            <p>Agrega tu primera propiedad</p>
+                            <button onclick="adminManager.showSection('add-property'); document.querySelector('.sidebar-menu a[href=\\'#add-property\\']').click()" class="btn-primary">
+                                ➕ Agregar Primera Propiedad
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.properties.map(property => `
+                    <div class="property-item">
+                        <div class="property-info">
+                            <h3>${property.title}</h3>
+                            <div class="property-meta">
+                                <span class="price">$${property.price?.toLocaleString() || '0'}</span>
+                                <span class="type">${this.getTypeLabel(property.type)}</span>
+                                <span class="status ${property.status}">${property.status}</span>
+                            </div>
+                            <div class="property-address">
+                                <span>📍</span>
+                                <span>${property.location?.address || 'Dirección no disponible'}</span>
+                            </div>
+                            <div class="property-area">
+                                <small>Área: ${property.characteristics?.area || '0'} m²</small>
+                            </div>
+                        </div>
+                        <div class="property-actions">
+                            <button class="btn-edit" onclick="adminManager.editProperty(${property.id})">✏️ Editar</button>
+                            <button class="btn-delete" onclick="adminManager.deleteProperty(${property.id})">🗑️ Eliminar</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            getTypeLabel(type) {
+                const types = { 'casa': 'Casa', 'apartamento': 'Apartamento', 'oficina': 'Oficina', 'solar': 'Solar' };
+                return types[type] || type;
+            }
+
+            editProperty(propertyId) {
+                const property = this.properties.find(p => p.id === propertyId);
+                if (!property) {
+                    alert('❌ Propiedad no encontrada');
+                    return;
+                }
+
+                this.editingProperty = property;
+                document.getElementById('propertyTitle').value = property.title || '';
+                document.getElementById('propertyType').value = property.type || '';
+                document.getElementById('propertyPrice').value = property.price || 0;
+                document.getElementById('propertyDescription').value = property.description || '';
+                document.getElementById('propertyAddress').value = property.location?.address || '';
+                document.getElementById('propertyLat').value = property.location?.lat || 18.7357;
+                document.getElementById('propertyLng').value = property.location?.lng || -70.1627;
+                document.getElementById('selectedCoordinates').textContent = `Lat: ${property.location?.lat || 18.7357}, Lng: ${property.location?.lng || -70.1627}`;
+                document.getElementById('propertyBedrooms').value = property.characteristics?.bedrooms || 0;
+                document.getElementById('propertyBathrooms').value = property.characteristics?.bathrooms || 0;
+                document.getElementById('propertyArea').value = property.characteristics?.area || 100;
+                document.getElementById('propertyParking').checked = property.characteristics?.parking || false;
+                document.getElementById('propertyPool').checked = property.characteristics?.pool || false;
+                document.getElementById('propertyGarden').checked = property.characteristics?.garden || false;
+
+                this.selectedImages = property.images ? property.images.map((src, index) => ({
+                    id: Date.now() + index, src: src, file: null
+                })) : [];
+                this.updateImagePreview();
+
+                this.showSection('add-property');
+                document.querySelector('.sidebar-menu a[href="#add-property"]').click();
+                document.querySelector('.btn-submit').innerHTML = '🔄 Actualizar Propiedad';
+                alert('✏️ Modo edición activado');
+            }
+
+            async handleUpdateProperty(propertyId) {
+                const submitBtn = document.querySelector('.btn-submit');
+                const originalText = submitBtn.innerHTML;
+                
+                try {
+                    submitBtn.innerHTML = '⏳ Actualizando...';
+                    submitBtn.disabled = true;
+
+                    const formData = this.getFormData();
+                    if (!this.validateForm(formData)) return;
+
+                    const { error } = await window.supabase
+                        .from('properties')
+                        .update(formData)
+                        .eq('id', propertyId);
+
+                    if (error) throw error;
+
+                    alert('✅ Propiedad actualizada exitosamente!');
+                    await this.loadPropertiesFromSupabase();
+                    this.resetForm();
+                    this.showSection('properties');
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                } finally {
+                    submitBtn.innerHTML = '🏠 Agregar Propiedad';
+                    submitBtn.disabled = false;
+                    this.editingProperty = null;
+                }
+            }
+
+            async deleteProperty(propertyId) {
+                if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
+                    try {
+                        const { error } = await window.supabase
+                            .from('properties')
+                            .delete()
+                            .eq('id', propertyId);
+
+                        if (error) throw error;
+
+                        alert('🗑️ Propiedad eliminada exitosamente');
+                        await this.loadPropertiesFromSupabase();
+                    } catch (error) {
+                        alert('❌ Error: ' + error.message);
+                    }
+                }
+            }
+
+            resetForm() {
+                document.getElementById('propertyForm').reset();
+                this.selectedImages = [];
+                this.updateImagePreview();
+                this.editingProperty = null;
+                
+                if (this.locationMarker) {
+                    this.locationMap.removeLayer(this.locationMarker);
+                    this.locationMarker = L.marker([18.7357, -70.1627]).addTo(this.locationMap).bindPopup('Ubicación de la propiedad');
+                    document.getElementById('propertyLat').value = 18.7357;
+                    document.getElementById('propertyLng').value = -70.1627;
+                    document.getElementById('selectedCoordinates').textContent = 'Lat: 18.7357, Lng: -70.1627';
+                }
+            }
+        }
+
+        // INICIALIZAR
+        document.addEventListener('DOMContentLoaded', () => {
+            window.adminManager = new AdminManager();
+            window.adminManager.init();
+        });
+    </script>
 </body>
 </html>
