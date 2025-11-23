@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
-    <link rel="stylesheet" href="css/admin.css">
+    <!-- RUTAS CORREGIDAS -->
+    <link rel="stylesheet" href="./css/admin.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -13,7 +14,7 @@
         <header class="admin-header">
             <h1>⚙️ Panel de Administración</h1>
             <nav>
-                <a href="index.html" class="btn-store">🏪 Ver Tienda</a>
+                <a href="./index.html" class="btn-store">🏪 Ver Tienda</a>
                 <button id="logoutBtn" class="btn-logout">🚪 Cerrar Sesión</button>
             </nav>
         </header>
@@ -169,10 +170,10 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts CON RUTAS CORREGIDAS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/config.js"></script>
+    <script src="./js/config.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/admin.js"></script>
+    <script src="./js/admin.js"></script>
 </body>
 </html>
