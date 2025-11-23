@@ -126,11 +126,10 @@ class ModernClientManager {
 
     handleAdminLogin() {
         const password = document.getElementById('adminPassword').value;
-        // Contraseña simple para demo
-        if (password === 'admin123') {
+        if (password === 'Admin4050') {
             window.location.href = 'admin.html';
         } else {
-            alert('Contraseña incorrecta. Usa "admin123" para demo.');
+            alert('❌ Contraseña incorrecta. Intenta nuevamente.');
         }
     }
 
@@ -150,20 +149,24 @@ class ModernClientManager {
 
     async loadProperties() {
         try {
-            // Intentar cargar de Supabase
+            console.log('📡 Cargando propiedades desde Supabase...');
+            
             const { data: properties, error } = await window.supabase
                 .from('properties')
                 .select('*')
                 .eq('status', 'disponible')
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
+            if (error) {
+                console.error('Error cargando propiedades:', error);
+                throw error;
+            }
 
             if (properties && properties.length > 0) {
                 this.properties = properties;
                 console.log(`✅ ${properties.length} propiedades cargadas de Supabase`);
             } else {
-                // Cargar propiedades de ejemplo
+                // Cargar propiedades de ejemplo si no hay en Supabase
                 this.loadExampleProperties();
             }
         } catch (error) {
