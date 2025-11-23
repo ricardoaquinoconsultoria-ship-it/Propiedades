@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* ===== ESTILOS ADMIN ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -18,6 +20,21 @@
         }
         body { font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text); background: var(--background); }
         .hidden { display: none !important; }
+        
+        /* Loading */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         
         /* Header Admin */
         .admin-header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-lg); }
@@ -158,7 +175,10 @@
 
                 <section id="properties" class="admin-section hidden">
                     <h2>🏠 Gestionar Propiedades</h2>
-                    <div class="properties-list" id="propertiesList"><p>Cargando propiedades...</p></div>
+                    <div class="properties-list" id="propertiesList">
+                        <div class="loading-spinner"></div>
+                        <p style="text-align: center;">Cargando propiedades...</p>
+                    </div>
                 </section>
 
                 <section id="add-property" class="admin-section hidden">
@@ -251,7 +271,10 @@
                             <div class="image-preview" id="imagePreview"></div>
                         </div>
 
-                        <button type="submit" class="btn-primary btn-submit">🏠 Agregar Propiedad</button>
+                        <button type="submit" class="btn-primary btn-submit">
+                            <span id="submitText">🏠 Agregar Propiedad</span>
+                            <span id="submitLoading" class="hidden loading-spinner"></span>
+                        </button>
                     </form>
                 </section>
             </main>
@@ -265,7 +288,13 @@
         const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1GXQm6L0Om6AZReeTK0e3Q81k-UQSVJAu3xMNQ';
         
-        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: false
+            }
+        });
 
         class AdminManager {
             constructor() {
@@ -275,34 +304,55 @@
                 this.selectedImages = [];
                 this.maxImages = 5;
                 this.editingProperty = null;
+                this.isLoading = false;
             }
 
             async init() {
-                console.log('🔄 Inicializando AdminManager...');
+                console.time('AdminManager inicializado');
                 await this.setupEventListeners();
                 await this.initializeLocationMap();
                 await this.loadPropertiesFromSupabase();
                 this.setupImageUpload();
-                console.log('✅ AdminManager inicializado');
+                console.timeEnd('AdminManager inicializado');
             }
 
             async loadPropertiesFromSupabase() {
+                if (this.isLoading) return;
+                
+                this.isLoading = true;
+                const container = document.getElementById('propertiesList');
+                
                 try {
-                    console.log('📡 Cargando propiedades desde Supabase...');
+                    console.time('Carga propiedades admin');
+                    
+                    container.innerHTML = `
+                        <div class="loading-spinner"></div>
+                        <p style="text-align: center;">Cargando propiedades...</p>
+                    `;
+
+                    // Consulta optimizada - solo campos necesarios
                     const { data: properties, error } = await window.supabase
                         .from('properties')
-                        .select('*')
-                        .order('created_at', { ascending: false });
+                        .select('id, title, type, price, location, characteristics, images, status, created_at')
+                        .order('created_at', { ascending: false })
+                        .limit(100); // Limitar para mejor performance
 
                     if (error) throw error;
 
                     this.properties = properties || [];
-                    console.log(`✅ ${this.properties.length} propiedades cargadas`);
+                    console.log(`✅ ${this.properties.length} propiedades cargadas en admin`);
+                    
                     this.updateDashboard();
                     this.renderPropertiesList();
+                    
                 } catch (error) {
                     console.error('Error cargando propiedades:', error);
+                    this.properties = [];
+                    this.renderPropertiesList();
                     alert('❌ Error cargando propiedades: ' + error.message);
+                } finally {
+                    this.isLoading = false;
+                    console.timeEnd('Carga propiedades admin');
                 }
             }
 
@@ -335,7 +385,7 @@
                     }
                 });
 
-                // Validación
+                // Validación en tiempo real
                 document.getElementById('propertyArea').addEventListener('input', (e) => {
                     this.validateAreaField(e.target);
                 });
@@ -351,16 +401,21 @@
 
             async handleAddProperty() {
                 const submitBtn = document.querySelector('.btn-submit');
-                const originalText = submitBtn.innerHTML;
+                const submitText = document.getElementById('submitText');
+                const submitLoading = document.getElementById('submitLoading');
+                
+                if (this.isLoading) return;
                 
                 try {
-                    submitBtn.innerHTML = '⏳ Guardando...';
+                    this.isLoading = true;
                     submitBtn.disabled = true;
+                    submitText.classList.add('hidden');
+                    submitLoading.classList.remove('hidden');
 
                     const formData = this.getFormData();
                     if (!this.validateForm(formData)) return;
 
-                    console.log('📤 Enviando propiedad a Supabase...');
+                    console.time('Agregar propiedad');
                     const { data, error } = await window.supabase
                         .from('properties')
                         .insert([formData])
@@ -373,12 +428,16 @@
                     await this.loadPropertiesFromSupabase();
                     this.resetForm();
                     this.showSection('properties');
+                    
                 } catch (error) {
                     console.error('Error:', error);
                     alert('❌ Error: ' + error.message);
                 } finally {
-                    submitBtn.innerHTML = '🏠 Agregar Propiedad';
+                    this.isLoading = false;
                     submitBtn.disabled = false;
+                    submitText.classList.remove('hidden');
+                    submitLoading.classList.add('hidden');
+                    console.timeEnd('Agregar propiedad');
                 }
             }
 
@@ -441,7 +500,8 @@
                 try {
                     this.locationMap = L.map('locationMap').setView([18.7357, -70.1627], 12);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
+                        attribution: '© OpenStreetMap contributors',
+                        maxZoom: 19
                     }).addTo(this.locationMap);
 
                     this.locationMarker = L.marker([18.7357, -70.1627])
@@ -472,6 +532,24 @@
                         return;
                     }
                     fileInput.click();
+                });
+
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--primary)';
+                    uploadArea.style.background = 'rgba(37, 99, 235, 0.1)';
+                });
+
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.style.borderColor = 'var(--border)';
+                    uploadArea.style.background = 'var(--background)';
+                });
+
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--border)';
+                    uploadArea.style.background = 'var(--background)';
+                    this.handleImageFiles(e.dataTransfer.files);
                 });
 
                 fileInput.addEventListener('change', (e) => {
@@ -505,13 +583,24 @@
                 
                 uploadArea.style.display = this.selectedImages.length > 0 ? 'none' : 'flex';
                 
-                previewContainer.innerHTML = this.selectedImages.map((image, index) => `
+                // Usar DocumentFragment para mejor performance
+                const fragment = document.createDocumentFragment();
+                const tempDiv = document.createElement('div');
+                
+                tempDiv.innerHTML = this.selectedImages.map((image, index) => `
                     <div class="preview-item">
-                        <img src="${image.src}" alt="Preview ${index + 1}">
+                        <img src="${image.src}" alt="Preview ${index + 1}" loading="lazy">
                         <button type="button" class="remove-image" data-id="${image.id}">×</button>
                         <span class="image-number">${index + 1}</span>
                     </div>
                 `).join('');
+
+                while (tempDiv.firstChild) {
+                    fragment.appendChild(tempDiv.firstChild);
+                }
+
+                previewContainer.innerHTML = '';
+                previewContainer.appendChild(fragment);
 
                 previewContainer.querySelectorAll('.remove-image').forEach(btn => {
                     btn.addEventListener('click', (e) => {
@@ -550,18 +639,22 @@
                     return;
                 }
 
-                container.innerHTML = this.properties.map(property => `
+                // Usar DocumentFragment para mejor performance
+                const fragment = document.createDocumentFragment();
+                const tempDiv = document.createElement('div');
+                
+                tempDiv.innerHTML = this.properties.map(property => `
                     <div class="property-item">
                         <div class="property-info">
-                            <h3>${property.title}</h3>
+                            <h3>${this.escapeHtml(property.title)}</h3>
                             <div class="property-meta">
-                                <span class="price">$${property.price?.toLocaleString() || '0'}</span>
+                                <span class="price">$${this.formatPrice(property.price)}</span>
                                 <span class="type">${this.getTypeLabel(property.type)}</span>
                                 <span class="status ${property.status}">${property.status}</span>
                             </div>
                             <div class="property-address">
                                 <span>📍</span>
-                                <span>${property.location?.address || 'Dirección no disponible'}</span>
+                                <span>${this.escapeHtml(property.location?.address || 'Dirección no disponible')}</span>
                             </div>
                             <div class="property-area">
                                 <small>Área: ${property.characteristics?.area || '0'} m²</small>
@@ -573,6 +666,13 @@
                         </div>
                     </div>
                 `).join('');
+
+                while (tempDiv.firstChild) {
+                    fragment.appendChild(tempDiv.firstChild);
+                }
+
+                container.innerHTML = '';
+                container.appendChild(fragment);
             }
 
             getTypeLabel(type) {
@@ -610,21 +710,27 @@
 
                 this.showSection('add-property');
                 document.querySelector('.sidebar-menu a[href="#add-property"]').click();
-                document.querySelector('.btn-submit').innerHTML = '🔄 Actualizar Propiedad';
+                document.querySelector('.btn-submit').innerHTML = '<span id="submitText">🔄 Actualizar Propiedad</span><span id="submitLoading" class="hidden loading-spinner"></span>';
                 alert('✏️ Modo edición activado');
             }
 
             async handleUpdateProperty(propertyId) {
                 const submitBtn = document.querySelector('.btn-submit');
-                const originalText = submitBtn.innerHTML;
+                const submitText = document.getElementById('submitText');
+                const submitLoading = document.getElementById('submitLoading');
+                
+                if (this.isLoading) return;
                 
                 try {
-                    submitBtn.innerHTML = '⏳ Actualizando...';
+                    this.isLoading = true;
                     submitBtn.disabled = true;
+                    submitText.classList.add('hidden');
+                    submitLoading.classList.remove('hidden');
 
                     const formData = this.getFormData();
                     if (!this.validateForm(formData)) return;
 
+                    console.time('Actualizar propiedad');
                     const { error } = await window.supabase
                         .from('properties')
                         .update(formData)
@@ -636,18 +742,23 @@
                     await this.loadPropertiesFromSupabase();
                     this.resetForm();
                     this.showSection('properties');
+                    
                 } catch (error) {
                     alert('❌ Error: ' + error.message);
                 } finally {
-                    submitBtn.innerHTML = '🏠 Agregar Propiedad';
+                    this.isLoading = false;
                     submitBtn.disabled = false;
+                    submitText.classList.remove('hidden');
+                    submitLoading.classList.add('hidden');
                     this.editingProperty = null;
+                    console.timeEnd('Actualizar propiedad');
                 }
             }
 
             async deleteProperty(propertyId) {
                 if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
                     try {
+                        console.time('Eliminar propiedad');
                         const { error } = await window.supabase
                             .from('properties')
                             .delete()
@@ -657,6 +768,7 @@
 
                         alert('🗑️ Propiedad eliminada exitosamente');
                         await this.loadPropertiesFromSupabase();
+                        console.timeEnd('Eliminar propiedad');
                     } catch (error) {
                         alert('❌ Error: ' + error.message);
                     }
@@ -669,6 +781,8 @@
                 this.updateImagePreview();
                 this.editingProperty = null;
                 
+                document.querySelector('.btn-submit').innerHTML = '<span id="submitText">🏠 Agregar Propiedad</span><span id="submitLoading" class="hidden loading-spinner"></span>';
+                
                 if (this.locationMarker) {
                     this.locationMap.removeLayer(this.locationMarker);
                     this.locationMarker = L.marker([18.7357, -70.1627]).addTo(this.locationMap).bindPopup('Ubicación de la propiedad');
@@ -677,12 +791,29 @@
                     document.getElementById('selectedCoordinates').textContent = 'Lat: 18.7357, Lng: -70.1627';
                 }
             }
+
+            // Métodos de utilidad
+            formatPrice(price) {
+                return new Intl.NumberFormat('es-DO').format(price || 0);
+            }
+
+            escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
         }
 
         // INICIALIZAR
         document.addEventListener('DOMContentLoaded', () => {
             window.adminManager = new AdminManager();
-            window.adminManager.init();
+            setTimeout(() => {
+                window.adminManager.init();
+            }, 100);
         });
     </script>
 </body>
