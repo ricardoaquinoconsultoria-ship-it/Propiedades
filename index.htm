@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inmobiliaria Moderna</title>
+    <title>Inmuebles Modernos</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -192,7 +192,7 @@
                         <p id="modalPropertyDescription">Descripción no disponible.</p>
                     </div>
                     <div class="contact-section">
-                        <button class="btn-contact">📞 Contactar Agente</button>
+                        <button class="btn-contact">📞 Información</button>
                     </div>
                 </div>
             </div>
@@ -203,7 +203,7 @@
     <header class="modern-header">
         <div class="header-container">
             <div class="logo">
-                <h1>🏠 Inmobiliaria Elite</h1>
+                <h1>🏠 Inmuebles Elite</h1>
             </div>
             <nav class="main-nav">
                 <a href="#properties">Propiedades</a>
@@ -280,7 +280,7 @@
     <!-- Footer -->
     <footer class="modern-footer">
         <div class="container">
-            <p>&copy; 2024 Inmobiliaria Elite. Todos los derechos reservados.</p>
+            <p>&copy; 2024</p>
         </div>
     </footer>
 
@@ -323,9 +323,9 @@
                     if (e.target === document.getElementById('propertyModal')) this.hidePropertyModal();
                 });
 
-                // BOTÓN CONTACTAR
+                // BOTÓN INFORMACIÓN (sin alerta)
                 document.querySelector('.btn-contact').addEventListener('click', () => {
-                    alert('📞 Un agente se pondrá en contacto contigo pronto.');
+                    // No hacer nada - solo mostrar información
                 });
 
                 // FILTROS
