@@ -264,11 +264,15 @@
                             <div class="image-upload-area" id="imageUploadArea">
                                 <div class="upload-placeholder">
                                     <span>📷</span>
-                                    <p>Arrastra imágenes aquí o haz clic para seleccionar<br><small>Máximo 5 imágenes</small></p>
+                                    <p>Haz clic para seleccionar imágenes<br><small>Máximo 5 imágenes - Se usarán URLs de internet</small></p>
                                 </div>
                                 <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
                             </div>
                             <div class="image-preview" id="imagePreview"></div>
+                            <div class="form-group">
+                                <label>O ingresa URLs de imágenes (una por línea):</label>
+                                <textarea id="imageUrls" placeholder="https://ejemplo.com/imagen1.jpg&#10;https://ejemplo.com/imagen2.jpg" rows="3"></textarea>
+                            </div>
                         </div>
 
                         <button type="submit" class="btn-primary btn-submit">
@@ -330,12 +334,10 @@
                         <p style="text-align: center;">Cargando propiedades...</p>
                     `;
 
-                    // Consulta optimizada - solo campos necesarios
                     const { data: properties, error } = await window.supabase
                         .from('properties')
-                        .select('id, title, type, price, location, characteristics, images, status, created_at')
-                        .order('created_at', { ascending: false })
-                        .limit(100); // Limitar para mejor performance
+                        .select('*')
+                        .order('created_at', { ascending: false });
 
                     if (error) throw error;
 
@@ -388,6 +390,11 @@
                 // Validación en tiempo real
                 document.getElementById('propertyArea').addEventListener('input', (e) => {
                     this.validateAreaField(e.target);
+                });
+
+                // Procesar URLs de imágenes
+                document.getElementById('imageUrls').addEventListener('blur', (e) => {
+                    this.processImageUrls(e.target.value);
                 });
             }
 
@@ -442,6 +449,12 @@
             }
 
             getFormData() {
+                // Obtener imágenes de URLs
+                const urlImages = this.getImagesFromUrls();
+                
+                // Combinar imágenes de URLs con imágenes seleccionadas
+                const allImages = [...this.selectedImages.map(img => img.src), ...urlImages];
+                
                 return {
                     title: document.getElementById('propertyTitle').value.trim(),
                     type: document.getElementById('propertyType').value,
@@ -461,9 +474,46 @@
                         garden: document.getElementById('propertyGarden').checked || false
                     },
                     status: 'disponible',
-                    images: this.selectedImages.map(img => img.src),
+                    images: allImages,
                     created_at: new Date().toISOString()
                 };
+            }
+
+            getImagesFromUrls() {
+                const urlsText = document.getElementById('imageUrls').value.trim();
+                if (!urlsText) return [];
+                
+                return urlsText
+                    .split('\n')
+                    .map(url => url.trim())
+                    .filter(url => url && this.isValidUrl(url));
+            }
+
+            isValidUrl(string) {
+                try {
+                    new URL(string);
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            processImageUrls(urlsText) {
+                const urls = urlsText
+                    .split('\n')
+                    .map(url => url.trim())
+                    .filter(url => url && this.isValidUrl(url))
+                    .slice(0, this.maxImages - this.selectedImages.length);
+
+                urls.forEach(url => {
+                    this.selectedImages.push({
+                        id: Date.now() + Math.random(),
+                        src: url,
+                        file: null
+                    });
+                });
+
+                this.updateImagePreview();
             }
 
             validateForm(formData) {
@@ -484,8 +534,8 @@
                     }
                 }
 
-                if (this.selectedImages.length === 0) {
-                    alert('❌ Debes agregar al menos una imagen');
+                if (formData.images.length === 0) {
+                    alert('❌ Debes agregar al menos una imagen (puedes usar URLs)');
                     return false;
                 }
 
@@ -532,24 +582,6 @@
                         return;
                     }
                     fileInput.click();
-                });
-
-                uploadArea.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    uploadArea.style.borderColor = 'var(--primary)';
-                    uploadArea.style.background = 'rgba(37, 99, 235, 0.1)';
-                });
-
-                uploadArea.addEventListener('dragleave', () => {
-                    uploadArea.style.borderColor = 'var(--border)';
-                    uploadArea.style.background = 'var(--background)';
-                });
-
-                uploadArea.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    uploadArea.style.borderColor = 'var(--border)';
-                    uploadArea.style.background = 'var(--background)';
-                    this.handleImageFiles(e.dataTransfer.files);
                 });
 
                 fileInput.addEventListener('change', (e) => {
@@ -703,9 +735,13 @@
                 document.getElementById('propertyPool').checked = property.characteristics?.pool || false;
                 document.getElementById('propertyGarden').checked = property.characteristics?.garden || false;
 
-                this.selectedImages = property.images ? property.images.map((src, index) => ({
-                    id: Date.now() + index, src: src, file: null
-                })) : [];
+                // Mostrar URLs de imágenes en el textarea
+                if (property.images && property.images.length > 0) {
+                    const imageUrls = property.images.filter(url => this.isValidUrl(url)).join('\n');
+                    document.getElementById('imageUrls').value = imageUrls;
+                }
+
+                this.selectedImages = [];
                 this.updateImagePreview();
 
                 this.showSection('add-property');
