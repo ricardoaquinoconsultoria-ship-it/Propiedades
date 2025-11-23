@@ -131,7 +131,8 @@
         <header class="admin-header">
             <h1>⚙️ Panel de Administración</h1>
             <nav>
-                <a href="index.html" class="btn-store">🏪 Ver Tienda</a>
+                <!-- BOTÓN CORREGIDO -->
+                <a href="./" class="btn-store">🏠 Ver Catálogo</a>
                 <button id="logoutBtn" class="btn-logout">🚪 Cerrar Sesión</button>
             </nav>
         </header>
@@ -331,7 +332,7 @@
                 // Cerrar sesión
                 document.getElementById('logoutBtn').addEventListener('click', () => {
                     if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                        window.location.href = 'index.html';
+                        window.location.href = './';
                     }
                 });
 
