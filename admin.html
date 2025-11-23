@@ -974,6 +974,8 @@
                     const formData = this.getFormData();
                     if (!this.validateForm(formData)) return;
 
+                    console.log('📤 Enviando datos a Supabase:', formData);
+
                     const { data, error } = await window.supabase
                         .from('properties')
                         .insert([formData])
@@ -981,13 +983,14 @@
 
                     if (error) throw error;
 
+                    console.log('✅ Propiedad agregada:', data);
                     alert('✅ Propiedad agregada exitosamente!');
                     await this.loadPropertiesFromSupabase();
                     this.resetForm();
                     this.showSection('properties');
                     
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('❌ Error:', error);
                     alert('❌ Error: ' + error.message);
                 } finally {
                     this.isLoading = false;
@@ -996,9 +999,10 @@
             }
 
             getFormData() {
+                // Usar solo las imágenes seleccionadas por el usuario
                 const images = this.selectedImages.length > 0 
                     ? this.selectedImages.map(img => img.src) 
-                    : this.getDefaultImages(document.getElementById('propertyType').value);
+                    : [];
                 
                 return {
                     title: document.getElementById('propertyTitle').value.trim(),
@@ -1022,27 +1026,6 @@
                     images: images,
                     created_at: new Date().toISOString()
                 };
-            }
-
-            getDefaultImages(propertyType) {
-                const defaultImages = {
-                    'casa': [
-                        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzk0OWZhYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuKXjyBDYXNhPC90ZXh0Pjwvc3ZnPg=='
-                    ],
-                    'apartamento': [
-                        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzk0OWZhYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuKXjyBBcGFydGFtZW50bzwvdGV4dD48L3N2Zz4='
-                    ],
-                    'oficina': [
-                        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzk0OWZhYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuKXjyBPZmljaW5hPC90ZXh0Pjwvc3ZnPg=='
-                    ],
-                    'solar': [
-                        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzk0OWZhYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuKXjyBTb2xhcjwvdGV4dD48L3N2Zz4='
-                    ]
-                };
-                
-                return defaultImages[propertyType] || [
-                    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzk0OWZhYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuKXjyBJbWFnZW4gZGVmYXVsdDwvdGV4dD48L3N2Zz4='
-                ];
             }
 
             validateForm(formData) {
@@ -1130,6 +1113,9 @@
                             </div>
                             <div class="property-area">
                                 <small>Área: ${property.characteristics?.area || '0'} m²</small>
+                            </div>
+                            <div class="property-images-count">
+                                <small>📷 ${property.images?.length || 0} imágenes</small>
                             </div>
                         </div>
                         <div class="property-actions">
