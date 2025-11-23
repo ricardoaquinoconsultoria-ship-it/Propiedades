@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* ===== ESTILOS ADMIN ===== */
+        /* Tus estilos actuales aquí (sin cambios) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --primary: #2563eb; --primary-dark: #1d4ed8; --secondary: #64748b; --accent: #f59e0b;
@@ -21,130 +18,13 @@
         body { font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text); background: var(--background); }
         .hidden { display: none !important; }
         
-        /* Loading */
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        /* ... (mantén todos tus estilos actuales) ... */
         
-        /* Header Admin */
-        .admin-header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-lg); }
-        .admin-header h1 { font-size: 1.8rem; font-weight: 700; }
-        .admin-header nav { display: flex; align-items: center; gap: 1rem; }
-        .btn-store { background: rgba(255, 255, 255, 0.2); color: white; text-decoration: none; padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 600; transition: all 0.3s ease; }
-        .btn-store:hover { background: rgba(255, 255, 255, 0.3); }
-        .btn-logout { background: var(--danger); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
-        .btn-logout:hover { background: #b91c1c; }
-        
-        /* Layout */
-        .admin-container { min-height: 100vh; display: flex; flex-direction: column; }
-        .admin-layout { display: flex; flex: 1; }
-        
-        /* Sidebar */
-        .sidebar { width: 280px; background: linear-gradient(135deg, var(--text) 0%, #334155 100%); color: white; padding: 2rem 0; }
-        .sidebar-menu { list-style: none; }
-        .sidebar-menu li { margin-bottom: 0.5rem; }
-        .sidebar-menu a { display: flex; align-items: center; gap: 1rem; color: #e2e8f0; text-decoration: none; padding: 1rem 2rem; transition: all 0.3s ease; border-left: 4px solid transparent; font-weight: 500; }
-        .sidebar-menu a:hover { background: rgba(255, 255, 255, 0.1); color: white; border-left-color: var(--primary); }
-        .sidebar-menu a.active { background: rgba(255, 255, 255, 0.15); color: white; border-left-color: var(--primary); font-weight: 600; }
-        
-        /* Main Content */
-        .admin-main { flex: 1; padding: 2rem; background: var(--background); overflow-y: auto; }
-        .admin-section { background: var(--surface); border-radius: 16px; padding: 2rem; box-shadow: var(--shadow); margin-bottom: 2rem; }
-        .admin-section h2 { color: var(--text); margin-bottom: 1.5rem; font-size: 1.5rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; }
-        
-        /* Panel */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: var(--shadow-lg); }
-        .stat-card h3 { font-size: 2rem; margin-bottom: 0.5rem; font-weight: 700; }
-        .stat-card p { opacity: 0.9; font-size: 0.9rem; }
-        
-        /* Formularios */
-        .property-form { max-width: 100%; }
-        .form-section { background: var(--background); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border-left: 4px solid var(--primary); }
-        .form-section h3 { color: var(--text); margin-bottom: 1.5rem; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text); }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; transition: all 0.3s ease; background: var(--surface); font-family: inherit; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
-        .checkbox-group label { margin-bottom: 0; font-weight: 500; cursor: pointer; }
-        
-        /* Mapa */
-        .map-selector { margin-top: 1rem; }
-        .map-selector p { margin-bottom: 1rem; color: var(--text-light); font-size: 0.9rem; }
-        #locationMap { height: 300px; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; border: 2px solid var(--border); }
-        .coordinates-display { background: var(--background); padding: 1rem; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.9rem; color: var(--text); border: 1px solid var(--border); }
-        .coordinates-display span:first-child { font-weight: 600; color: var(--text-light); }
-        .coordinates-display span:last-child { color: var(--primary); font-weight: 600; }
-        
-        /* Imágenes */
-        .image-upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 3rem 2rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--background); margin-bottom: 1.5rem; }
-        .image-upload-area:hover { border-color: var(--primary); background: rgba(37, 99, 235, 0.05); }
-        .upload-placeholder span { font-size: 3rem; color: var(--primary); display: block; margin-bottom: 1rem; }
-        .upload-placeholder p { color: var(--text-light); margin: 0 0 0.5rem 0; font-size: 1.1rem; }
-        .image-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
-        .preview-item { position: relative; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
-        .preview-item img { width: 100%; height: 120px; object-fit: cover; display: block; }
-        .remove-image { position: absolute; top: 5px; right: 5px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
-        .remove-image:hover { background: #b91c1c; }
-        .image-number { position: absolute; bottom: 5px; left: 5px; background: rgba(0, 0, 0, 0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
-        
-        /* Botones */
-        .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: all 0.3s ease; width: 100%; margin-top: 1rem; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-        .btn-submit { background: linear-gradient(135deg, var(--success) 0%, #15803d 100%); font-size: 1.1rem; padding: 16px 28px; }
-        
-        /* Lista Propiedades */
-        .properties-list { margin-top: 1.5rem; }
-        .property-item { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 1rem; background: var(--surface); transition: all 0.3s ease; }
-        .property-item:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: var(--primary); }
-        .property-info h3 { color: var(--text); margin-bottom: 0.5rem; font-size: 1.2rem; }
-        .property-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
-        .price { font-weight: 700; color: var(--primary); font-size: 1.1rem; }
-        .type { background: var(--accent); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
-        .status { padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
-        .status.disponible { background: var(--success); color: white; }
-        .property-address { color: var(--text-light); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
-        .property-actions { display: flex; gap: 0.5rem; }
-        .btn-edit { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.3s ease; display: flex; align-items: center; gap: 0.5rem; }
-        .btn-edit:hover { background: var(--primary-dark); }
-        .btn-delete { background: var(--danger); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.3s ease; display: flex; align-items: center; gap: 0.5rem; }
-        .btn-delete:hover { background: #b91c1c; }
-        
-        .no-properties { text-align: center; color: var(--text-light); padding: 3rem; font-size: 1.1rem; background: var(--surface); border-radius: 12px; border: 2px dashed var(--border); }
-        
-        .required-field::after { content: " *"; color: #dc2626; }
-        
-        @media (max-width: 768px) {
-            .admin-layout { flex-direction: column; }
-            .sidebar { width: 100%; padding: 1rem 0; }
-            .sidebar-menu { display: flex; overflow-x: auto; padding: 0 1rem; }
-            .sidebar-menu li { margin-bottom: 0; margin-right: 1rem; flex-shrink: 0; }
-            .sidebar-menu a { white-space: nowrap; border-left: none; border-bottom: 4px solid transparent; padding: 0.8rem 1rem; }
-            .sidebar-menu a.active { border-left: none; border-bottom-color: var(--primary); }
-            .admin-header { flex-direction: column; gap: 1rem; padding: 1rem; }
-            .form-row { grid-template-columns: 1fr; }
-            .property-item { flex-direction: column; align-items: flex-start; gap: 1rem; }
-            .property-actions { align-self: stretch; justify-content: space-between; }
-            .property-actions button { flex: 1; justify-content: center; }
-            .admin-main { padding: 1rem; }
-        }
     </style>
 </head>
 <body>
     <div class="admin-container">
+        <!-- Tu HTML actual del admin -->
         <header class="admin-header">
             <h1>⚙️ Panel de Administración</h1>
             <nav>
@@ -260,19 +140,13 @@
                         </div>
 
                         <div class="form-section">
-                            <h3>🖼️ Galería de Imágenes (Máximo 5)</h3>
-                            <div class="image-upload-area" id="imageUploadArea">
-                                <div class="upload-placeholder">
-                                    <span>📷</span>
-                                    <p>Haz clic para seleccionar imágenes<br><small>Máximo 5 imágenes - Se usarán URLs de internet</small></p>
-                                </div>
-                                <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
+                            <h3>🖼️ URLs de Imágenes (Una por línea)</h3>
+                            <div class="form-group">
+                                <label for="imageUrls" class="required-field">URLs de Imágenes:</label>
+                                <textarea id="imageUrls" placeholder="https://ejemplo.com/imagen1.jpg&#10;https://ejemplo.com/imagen2.jpg&#10;https://ejemplo.com/imagen3.jpg" rows="4" required></textarea>
+                                <small style="color: var(--text-light);">Ingresa una URL por línea. Máximo 5 imágenes.</small>
                             </div>
                             <div class="image-preview" id="imagePreview"></div>
-                            <div class="form-group">
-                                <label>O ingresa URLs de imágenes (una por línea):</label>
-                                <textarea id="imageUrls" placeholder="https://ejemplo.com/imagen1.jpg&#10;https://ejemplo.com/imagen2.jpg" rows="3"></textarea>
-                            </div>
                         </div>
 
                         <button type="submit" class="btn-primary btn-submit">
@@ -292,48 +166,25 @@
         const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1GXQm6L0Om6AZReeTK0e3Q81k-UQSVJAu3xMNQ';
         
-        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: false
-            }
-        });
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         class AdminManager {
             constructor() {
                 this.properties = [];
                 this.locationMap = null;
                 this.locationMarker = null;
-                this.selectedImages = [];
-                this.maxImages = 5;
                 this.editingProperty = null;
                 this.isLoading = false;
             }
 
             async init() {
-                console.time('AdminManager inicializado');
                 await this.setupEventListeners();
                 await this.initializeLocationMap();
                 await this.loadPropertiesFromSupabase();
-                this.setupImageUpload();
-                console.timeEnd('AdminManager inicializado');
             }
 
             async loadPropertiesFromSupabase() {
-                if (this.isLoading) return;
-                
-                this.isLoading = true;
-                const container = document.getElementById('propertiesList');
-                
                 try {
-                    console.time('Carga propiedades admin');
-                    
-                    container.innerHTML = `
-                        <div class="loading-spinner"></div>
-                        <p style="text-align: center;">Cargando propiedades...</p>
-                    `;
-
                     const { data: properties, error } = await window.supabase
                         .from('properties')
                         .select('*')
@@ -342,19 +193,12 @@
                     if (error) throw error;
 
                     this.properties = properties || [];
-                    console.log(`✅ ${this.properties.length} propiedades cargadas en admin`);
-                    
                     this.updateDashboard();
                     this.renderPropertiesList();
                     
                 } catch (error) {
                     console.error('Error cargando propiedades:', error);
-                    this.properties = [];
-                    this.renderPropertiesList();
                     alert('❌ Error cargando propiedades: ' + error.message);
-                } finally {
-                    this.isLoading = false;
-                    console.timeEnd('Carga propiedades admin');
                 }
             }
 
@@ -387,14 +231,9 @@
                     }
                 });
 
-                // Validación en tiempo real
-                document.getElementById('propertyArea').addEventListener('input', (e) => {
-                    this.validateAreaField(e.target);
-                });
-
-                // Procesar URLs de imágenes
-                document.getElementById('imageUrls').addEventListener('blur', (e) => {
-                    this.processImageUrls(e.target.value);
+                // Preview de imágenes cuando se escriben URLs
+                document.getElementById('imageUrls').addEventListener('input', (e) => {
+                    this.updateImagePreviewFromUrls(e.target.value);
                 });
             }
 
@@ -407,22 +246,15 @@
             }
 
             async handleAddProperty() {
-                const submitBtn = document.querySelector('.btn-submit');
-                const submitText = document.getElementById('submitText');
-                const submitLoading = document.getElementById('submitLoading');
-                
                 if (this.isLoading) return;
                 
                 try {
                     this.isLoading = true;
-                    submitBtn.disabled = true;
-                    submitText.classList.add('hidden');
-                    submitLoading.classList.remove('hidden');
+                    this.setSubmitButtonLoading(true);
 
                     const formData = this.getFormData();
                     if (!this.validateForm(formData)) return;
 
-                    console.time('Agregar propiedad');
                     const { data, error } = await window.supabase
                         .from('properties')
                         .insert([formData])
@@ -430,7 +262,6 @@
 
                     if (error) throw error;
 
-                    console.log('✅ Propiedad agregada:', data);
                     alert('✅ Propiedad agregada exitosamente!');
                     await this.loadPropertiesFromSupabase();
                     this.resetForm();
@@ -441,19 +272,12 @@
                     alert('❌ Error: ' + error.message);
                 } finally {
                     this.isLoading = false;
-                    submitBtn.disabled = false;
-                    submitText.classList.remove('hidden');
-                    submitLoading.classList.add('hidden');
-                    console.timeEnd('Agregar propiedad');
+                    this.setSubmitButtonLoading(false);
                 }
             }
 
             getFormData() {
-                // Obtener imágenes de URLs
-                const urlImages = this.getImagesFromUrls();
-                
-                // Combinar imágenes de URLs con imágenes seleccionadas
-                const allImages = [...this.selectedImages.map(img => img.src), ...urlImages];
+                const imageUrls = this.getValidImageUrls();
                 
                 return {
                     title: document.getElementById('propertyTitle').value.trim(),
@@ -474,46 +298,42 @@
                         garden: document.getElementById('propertyGarden').checked || false
                     },
                     status: 'disponible',
-                    images: allImages,
+                    images: imageUrls,
                     created_at: new Date().toISOString()
                 };
             }
 
-            getImagesFromUrls() {
+            getValidImageUrls() {
                 const urlsText = document.getElementById('imageUrls').value.trim();
                 if (!urlsText) return [];
                 
                 return urlsText
                     .split('\n')
                     .map(url => url.trim())
-                    .filter(url => url && this.isValidUrl(url));
+                    .filter(url => url && this.isValidImageUrl(url))
+                    .slice(0, 5); // Máximo 5 imágenes
             }
 
-            isValidUrl(string) {
+            isValidImageUrl(url) {
+                // Validación básica de URL
                 try {
-                    new URL(string);
-                    return true;
+                    new URL(url);
+                    return url.match(/\.(jpeg|jpg|gif|png|webp)$/i) !== null;
                 } catch (_) {
                     return false;
                 }
             }
 
-            processImageUrls(urlsText) {
-                const urls = urlsText
-                    .split('\n')
-                    .map(url => url.trim())
-                    .filter(url => url && this.isValidUrl(url))
-                    .slice(0, this.maxImages - this.selectedImages.length);
-
-                urls.forEach(url => {
-                    this.selectedImages.push({
-                        id: Date.now() + Math.random(),
-                        src: url,
-                        file: null
-                    });
-                });
-
-                this.updateImagePreview();
+            updateImagePreviewFromUrls(urlsText) {
+                const validUrls = this.getValidImageUrls();
+                const previewContainer = document.getElementById('imagePreview');
+                
+                previewContainer.innerHTML = validUrls.map((url, index) => `
+                    <div class="preview-item">
+                        <img src="${url}" alt="Preview ${index + 1}" loading="lazy" onerror="this.style.display='none'">
+                        <span class="image-number">${index + 1}</span>
+                    </div>
+                `).join('');
             }
 
             validateForm(formData) {
@@ -535,23 +355,18 @@
                 }
 
                 if (formData.images.length === 0) {
-                    alert('❌ Debes agregar al menos una imagen (puedes usar URLs)');
+                    alert('❌ Debes agregar al menos una imagen URL válida');
                     return false;
                 }
 
                 return true;
             }
 
-            validateAreaField(field) {
-                field.style.borderColor = field.value && parseInt(field.value) > 0 ? '#16a34a' : '#dc2626';
-            }
-
             async initializeLocationMap() {
                 try {
                     this.locationMap = L.map('locationMap').setView([18.7357, -70.1627], 12);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors',
-                        maxZoom: 19
+                        attribution: '© OpenStreetMap contributors'
                     }).addTo(this.locationMap);
 
                     this.locationMarker = L.marker([18.7357, -70.1627])
@@ -570,81 +385,6 @@
                 } catch (error) {
                     console.error('Error inicializando mapa:', error);
                 }
-            }
-
-            setupImageUpload() {
-                const uploadArea = document.getElementById('imageUploadArea');
-                const fileInput = document.getElementById('imageUpload');
-
-                uploadArea.addEventListener('click', () => {
-                    if (this.selectedImages.length >= this.maxImages) {
-                        alert(`❌ Límite de ${this.maxImages} imágenes alcanzado`);
-                        return;
-                    }
-                    fileInput.click();
-                });
-
-                fileInput.addEventListener('change', (e) => {
-                    this.handleImageFiles(e.target.files);
-                });
-            }
-
-            handleImageFiles(files) {
-                const remaining = this.maxImages - this.selectedImages.length;
-                const filesToProcess = Array.from(files).slice(0, remaining);
-
-                filesToProcess.forEach(file => {
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            this.selectedImages.push({
-                                id: Date.now() + Math.random(),
-                                src: e.target.result,
-                                file: file
-                            });
-                            this.updateImagePreview();
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            }
-
-            updateImagePreview() {
-                const previewContainer = document.getElementById('imagePreview');
-                const uploadArea = document.getElementById('imageUploadArea');
-                
-                uploadArea.style.display = this.selectedImages.length > 0 ? 'none' : 'flex';
-                
-                // Usar DocumentFragment para mejor performance
-                const fragment = document.createDocumentFragment();
-                const tempDiv = document.createElement('div');
-                
-                tempDiv.innerHTML = this.selectedImages.map((image, index) => `
-                    <div class="preview-item">
-                        <img src="${image.src}" alt="Preview ${index + 1}" loading="lazy">
-                        <button type="button" class="remove-image" data-id="${image.id}">×</button>
-                        <span class="image-number">${index + 1}</span>
-                    </div>
-                `).join('');
-
-                while (tempDiv.firstChild) {
-                    fragment.appendChild(tempDiv.firstChild);
-                }
-
-                previewContainer.innerHTML = '';
-                previewContainer.appendChild(fragment);
-
-                previewContainer.querySelectorAll('.remove-image').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        this.removeImage(btn.getAttribute('data-id'));
-                    });
-                });
-            }
-
-            removeImage(id) {
-                this.selectedImages = this.selectedImages.filter(img => img.id != id);
-                this.updateImagePreview();
             }
 
             updateDashboard() {
@@ -671,11 +411,7 @@
                     return;
                 }
 
-                // Usar DocumentFragment para mejor performance
-                const fragment = document.createDocumentFragment();
-                const tempDiv = document.createElement('div');
-                
-                tempDiv.innerHTML = this.properties.map(property => `
+                container.innerHTML = this.properties.map(property => `
                     <div class="property-item">
                         <div class="property-info">
                             <h3>${this.escapeHtml(property.title)}</h3>
@@ -698,13 +434,6 @@
                         </div>
                     </div>
                 `).join('');
-
-                while (tempDiv.firstChild) {
-                    fragment.appendChild(tempDiv.firstChild);
-                }
-
-                container.innerHTML = '';
-                container.appendChild(fragment);
             }
 
             getTypeLabel(type) {
@@ -720,6 +449,8 @@
                 }
 
                 this.editingProperty = property;
+                
+                // Llenar formulario
                 document.getElementById('propertyTitle').value = property.title || '';
                 document.getElementById('propertyType').value = property.type || '';
                 document.getElementById('propertyPrice').value = property.price || 0;
@@ -735,38 +466,27 @@
                 document.getElementById('propertyPool').checked = property.characteristics?.pool || false;
                 document.getElementById('propertyGarden').checked = property.characteristics?.garden || false;
 
-                // Mostrar URLs de imágenes en el textarea
+                // Mostrar imágenes existentes
                 if (property.images && property.images.length > 0) {
-                    const imageUrls = property.images.filter(url => this.isValidUrl(url)).join('\n');
-                    document.getElementById('imageUrls').value = imageUrls;
+                    document.getElementById('imageUrls').value = property.images.join('\n');
+                    this.updateImagePreviewFromUrls(property.images.join('\n'));
                 }
-
-                this.selectedImages = [];
-                this.updateImagePreview();
 
                 this.showSection('add-property');
                 document.querySelector('.sidebar-menu a[href="#add-property"]').click();
                 document.querySelector('.btn-submit').innerHTML = '<span id="submitText">🔄 Actualizar Propiedad</span><span id="submitLoading" class="hidden loading-spinner"></span>';
-                alert('✏️ Modo edición activado');
             }
 
             async handleUpdateProperty(propertyId) {
-                const submitBtn = document.querySelector('.btn-submit');
-                const submitText = document.getElementById('submitText');
-                const submitLoading = document.getElementById('submitLoading');
-                
                 if (this.isLoading) return;
                 
                 try {
                     this.isLoading = true;
-                    submitBtn.disabled = true;
-                    submitText.classList.add('hidden');
-                    submitLoading.classList.remove('hidden');
+                    this.setSubmitButtonLoading(true);
 
                     const formData = this.getFormData();
                     if (!this.validateForm(formData)) return;
 
-                    console.time('Actualizar propiedad');
                     const { error } = await window.supabase
                         .from('properties')
                         .update(formData)
@@ -783,18 +503,14 @@
                     alert('❌ Error: ' + error.message);
                 } finally {
                     this.isLoading = false;
-                    submitBtn.disabled = false;
-                    submitText.classList.remove('hidden');
-                    submitLoading.classList.add('hidden');
+                    this.setSubmitButtonLoading(false);
                     this.editingProperty = null;
-                    console.timeEnd('Actualizar propiedad');
                 }
             }
 
             async deleteProperty(propertyId) {
                 if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
                     try {
-                        console.time('Eliminar propiedad');
                         const { error } = await window.supabase
                             .from('properties')
                             .delete()
@@ -804,7 +520,6 @@
 
                         alert('🗑️ Propiedad eliminada exitosamente');
                         await this.loadPropertiesFromSupabase();
-                        console.timeEnd('Eliminar propiedad');
                     } catch (error) {
                         alert('❌ Error: ' + error.message);
                     }
@@ -813,12 +528,13 @@
 
             resetForm() {
                 document.getElementById('propertyForm').reset();
-                this.selectedImages = [];
-                this.updateImagePreview();
+                document.getElementById('imageUrls').value = '';
+                document.getElementById('imagePreview').innerHTML = '';
                 this.editingProperty = null;
                 
                 document.querySelector('.btn-submit').innerHTML = '<span id="submitText">🏠 Agregar Propiedad</span><span id="submitLoading" class="hidden loading-spinner"></span>';
                 
+                // Resetear mapa
                 if (this.locationMarker) {
                     this.locationMap.removeLayer(this.locationMarker);
                     this.locationMarker = L.marker([18.7357, -70.1627]).addTo(this.locationMap).bindPopup('Ubicación de la propiedad');
@@ -828,7 +544,21 @@
                 }
             }
 
-            // Métodos de utilidad
+            setSubmitButtonLoading(loading) {
+                const submitText = document.getElementById('submitText');
+                const submitLoading = document.getElementById('submitLoading');
+                const submitBtn = document.querySelector('.btn-submit');
+                
+                submitBtn.disabled = loading;
+                if (loading) {
+                    submitText.classList.add('hidden');
+                    submitLoading.classList.remove('hidden');
+                } else {
+                    submitText.classList.remove('hidden');
+                    submitLoading.classList.add('hidden');
+                }
+            }
+
             formatPrice(price) {
                 return new Intl.NumberFormat('es-DO').format(price || 0);
             }
@@ -847,9 +577,7 @@
         // INICIALIZAR
         document.addEventListener('DOMContentLoaded', () => {
             window.adminManager = new AdminManager();
-            setTimeout(() => {
-                window.adminManager.init();
-            }, 100);
+            window.adminManager.init();
         });
     </script>
 </body>
