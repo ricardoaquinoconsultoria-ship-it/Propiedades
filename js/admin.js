@@ -10,6 +10,13 @@ class AdminManager {
 
     async init() {
         console.log('🔄 Inicializando AdminManager...');
+        
+        // Verificar que Supabase esté disponible
+        if (!window.supabase) {
+            alert('❌ Error: No se pudo conectar a la base de datos. Recarga la página.');
+            return;
+        }
+        
         await this.setupEventListeners();
         await this.initializeLocationMap();
         await this.loadPropertiesFromSupabase();
@@ -19,7 +26,7 @@ class AdminManager {
 
     async loadPropertiesFromSupabase() {
         try {
-            console.log('📡 Cargando propiedades...');
+            console.log('📡 Cargando propiedades desde Supabase...');
             
             const { data: properties, error } = await window.supabase
                 .from('properties')
@@ -32,16 +39,14 @@ class AdminManager {
             }
 
             this.properties = properties || [];
-            console.log(`✅ ${this.properties.length} propiedades cargadas`);
+            console.log(`✅ ${this.properties.length} propiedades cargadas de Supabase`);
             
             this.updateDashboard();
             this.renderPropertiesList();
             
         } catch (error) {
             console.error('Error cargando propiedades:', error);
-            this.properties = getLocalData('properties');
-            this.updateDashboard();
-            this.renderPropertiesList();
+            alert('❌ Error cargando propiedades: ' + error.message);
         }
     }
 
@@ -113,7 +118,7 @@ class AdminManager {
                 return;
             }
 
-            console.log('📤 Enviando propiedad...', formData);
+            console.log('📤 Enviando propiedad a Supabase...', formData);
 
             const { data, error } = await window.supabase
                 .from('properties')
@@ -122,7 +127,7 @@ class AdminManager {
 
             if (error) throw error;
 
-            console.log('✅ Propiedad agregada:', data);
+            console.log('✅ Propiedad agregada a Supabase:', data);
             alert('✅ Propiedad agregada exitosamente!');
             
             await this.loadPropertiesFromSupabase();
@@ -130,8 +135,8 @@ class AdminManager {
             this.showSection('properties');
             
         } catch (error) {
-            console.error('Error:', error);
-            alert('❌ Error: ' + error.message);
+            console.error('Error agregando propiedad:', error);
+            alert('❌ Error al agregar la propiedad: ' + error.message);
         } finally {
             submitBtn.innerHTML = '🏠 Agregar Propiedad';
             submitBtn.disabled = false;
@@ -485,6 +490,8 @@ class AdminManager {
                 return;
             }
 
+            console.log('📤 Actualizando propiedad en Supabase...', formData);
+
             const { error } = await window.supabase
                 .from('properties')
                 .update(formData)
@@ -524,14 +531,12 @@ class AdminManager {
                     return;
                 }
 
-                this.properties = this.properties.filter(p => p.id !== propertyId);
-                this.updateDashboard();
-                this.renderPropertiesList();
                 alert('🗑️ Propiedad eliminada exitosamente');
+                await this.loadPropertiesFromSupabase();
 
             } catch (error) {
                 console.error('Error eliminando propiedad:', error);
-                alert('❌ Error al eliminar la propiedad');
+                alert('❌ Error al eliminar la propiedad: ' + error.message);
             }
         }
     }
