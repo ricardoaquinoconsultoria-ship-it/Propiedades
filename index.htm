@@ -19,12 +19,22 @@
         .hidden { display: none !important; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
-        /* ===== BOTÓN ADMIN MEJORADO ===== */
+        /* ===== SOLUCIÓN DEFINITIVA Z-INDEX ===== */
+        /* Header - MÁXIMA PRIORIDAD */
+        .modern-header { 
+            background: var(--surface); 
+            box-shadow: var(--shadow); 
+            position: sticky; 
+            top: 0; 
+            z-index: 999999 !important; /* MÁXIMO z-index */
+        }
+        
+        /* Botón admin - MÁXIMA PRIORIDAD */
         .admin-floating-btn { 
             position: fixed; 
             top: 20px; 
             right: 20px; 
-            z-index: 10001; /* Aumentado */
+            z-index: 1000000 !important; /* AÚN MÁS ALTO */
             pointer-events: auto;
         }
 
@@ -52,31 +62,43 @@
             box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
         }
 
-        .admin-floating-btn button:active { 
-            transform: translateY(0); 
+        /* FORZAR MAPA Y TODAS SUS CAPAS ABAJO */
+        .leaflet-container,
+        .leaflet-pane,
+        .leaflet-map-pane,
+        .leaflet-overlay-pane,
+        .leaflet-marker-pane,
+        .leaflet-popup-pane,
+        .leaflet-shadow-pane,
+        .leaflet-tile-pane {
+            z-index: 1 !important;
         }
         
-        /* Header - CORREGIDO */
-        .modern-header { 
-            background: var(--surface); 
-            box-shadow: var(--shadow); 
-            position: sticky; 
-            top: 0; 
-            z-index: 10000; /* Aumentado */
+        .leaflet-popup,
+        .leaflet-popup-content-wrapper,
+        .leaflet-popup-tip {
+            z-index: 2 !important;
         }
-        .header-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; height: 70px; }
+        
+        /* Header interno */
+        .header-container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            height: 70px; 
+            position: relative;
+            z-index: 999999 !important;
+        }
         .logo h1 { color: var(--primary); font-size: 1.5rem; font-weight: 700; }
         .main-nav { display: flex; gap: 30px; }
         .main-nav a { text-decoration: none; color: var(--text); font-weight: 500; transition: color 0.3s ease; }
         .main-nav a:hover { color: var(--primary); }
         
-        /* Mapa - CORREGIDO */
-        .leaflet-container {
-            z-index: 1 !important; /* Forzar mapa abajo */
-        }
-        
         /* Modales */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 10002; backdrop-filter: blur(5px); }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000002 !important; backdrop-filter: blur(5px); }
         .modal-content { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-lg); width: 90%; max-width: 400px; overflow: hidden; }
         .modal-header { background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .close-modal { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
@@ -92,12 +114,12 @@
         .btn-secondary:hover { background: #475569; }
         
         /* Hero */
-        .hero { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 80px 0; text-align: center; }
+        .hero { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 80px 0; text-align: center; position: relative; z-index: 1; }
         .hero-content h2 { font-size: 3rem; font-weight: 700; margin-bottom: 16px; }
         .hero-content p { font-size: 1.2rem; opacity: 0.9; }
         
         /* Filtros */
-        .filter-section { background: var(--surface); padding: 40px 0; margin-top: -40px; }
+        .filter-section { background: var(--surface); padding: 40px 0; margin-top: -40px; position: relative; z-index: 2; }
         .filter-main-btn { background: var(--surface); border: 2px solid var(--border); border-radius: 12px; padding: 20px 24px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1.1rem; transition: all 0.3s ease; box-shadow: var(--shadow); }
         .filter-main-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
         .filter-options { background: var(--surface); border: 2px solid var(--border); border-radius: 12px; margin-top: 12px; overflow: hidden; box-shadow: var(--shadow-lg); }
@@ -106,12 +128,12 @@
         .filter-option:hover, .filter-option.active { background: var(--primary); color: white; }
         
         /* Mapa */
-        .map-section { padding: 60px 0; background: var(--background); }
+        .map-section { padding: 60px 0; background: var(--background); position: relative; z-index: 1; }
         .section-title { font-size: 2rem; font-weight: 700; color: var(--text); margin-bottom: 30px; text-align: center; }
-        #map { height: 500px; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-lg); position: relative; z-index: 1; }
+        #map { height: 500px; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-lg); position: relative; }
         
         /* Propiedades */
-        .properties-section { padding: 60px 0; }
+        .properties-section { padding: 60px 0; position: relative; z-index: 1; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
         .properties-count { color: var(--text-light); font-weight: 500; }
         .properties-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
@@ -154,7 +176,7 @@
         .btn-contact:hover { background: var(--primary-dark); }
         
         /* Footer */
-        .modern-footer { background: var(--text); color: white; text-align: center; padding: 30px 0; }
+        .modern-footer { background: var(--text); color: white; text-align: center; padding: 30px 0; position: relative; z-index: 1; }
         
         /* Loading y estados */
         .loading { text-align: center; padding: 40px; color: var(--text-light); }
@@ -187,11 +209,26 @@
     </style>
 </head>
 <body>
-    <!-- Botón flotante admin - MEJORADO -->
+    <!-- Botón flotante admin - SOLUCIÓN DEFINITIVA -->
     <div class="admin-floating-btn">
         <button id="adminAccessBtn" title="Acceso Administrador">⚙️ Admin</button>
     </div>
 
+    <!-- Header Moderno - SOLUCIÓN DEFINITIVA -->
+    <header class="modern-header">
+        <div class="header-container">
+            <div class="logo">
+                <h1>🏠 Inmuebles</h1>
+            </div>
+            <nav class="main-nav">
+                <a href="#properties">Propiedades</a>
+                <a href="#about">Nosotros</a>
+                <a href="#contact">Contacto</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Resto del contenido permanece igual -->
     <!-- Modal admin -->
     <div id="adminModal" class="modal hidden">
         <div class="modal-content">
@@ -260,20 +297,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Header Moderno -->
-    <header class="modern-header">
-        <div class="header-container">
-            <div class="logo">
-                <h1>🏠 Inmuebles</h1>
-            </div>
-            <nav class="main-nav">
-                <a href="#properties">Propiedades</a>
-                <a href="#about">Nosotros</a>
-                <a href="#contact">Contacto</a>
-            </nav>
-        </div>
-    </header>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -356,7 +379,7 @@
         
         window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // CLIENT MANAGER
+        // CLIENT MANAGER (el mismo código anterior)
         class ModernClientManager {
             constructor() {
                 this.properties = [];
@@ -364,7 +387,7 @@
                 this.currentFilter = 'all';
                 this.map = null;
                 this.markers = [];
-                this.imageCache = new Map(); // Cache para imágenes ya cargadas
+                this.imageCache = new Map();
             }
 
             init() {
@@ -374,29 +397,21 @@
             }
 
             setupEventListeners() {
-                // BOTÓN ADMIN
                 document.getElementById('adminAccessBtn').addEventListener('click', () => this.showAdminModal());
                 document.getElementById('closeAdminModal').addEventListener('click', () => this.hideAdminModal());
                 document.getElementById('cancelAdminBtn').addEventListener('click', () => this.hideAdminModal());
                 document.getElementById('submitAdminBtn').addEventListener('click', () => this.handleAdminLogin());
-
-                // MODAL PROPIEDAD
                 document.getElementById('closePropertyModal').addEventListener('click', () => this.hidePropertyModal());
                 document.getElementById('propertyModal').addEventListener('click', (e) => {
                     if (e.target === document.getElementById('propertyModal')) this.hidePropertyModal();
                 });
+                document.querySelector('.btn-contact').addEventListener('click', () => {});
 
-                // BOTÓN INFORMACIÓN
-                document.querySelector('.btn-contact').addEventListener('click', () => {
-                    // No hacer nada - solo mostrar información
-                });
-
-                // FILTROS
+                // Filtros
                 document.getElementById('mainFilterBtn').addEventListener('click', (e) => {
                     e.stopPropagation();
                     document.getElementById('filterOptions').classList.toggle('hidden');
                 });
-
                 document.querySelectorAll('.filter-option').forEach(option => {
                     option.addEventListener('click', () => {
                         const filter = option.getAttribute('data-filter');
@@ -407,19 +422,15 @@
                         document.getElementById('filterOptions').classList.add('hidden');
                     });
                 });
-
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('.filter-section')) {
                         document.getElementById('filterOptions').classList.add('hidden');
                     }
                 });
-
-                // Lazy loading para imágenes
                 this.setupLazyLoading();
             }
 
             setupLazyLoading() {
-                // Intersection Observer para lazy loading
                 if ('IntersectionObserver' in window) {
                     const imageObserver = new IntersectionObserver((entries) => {
                         entries.forEach(entry => {
@@ -431,8 +442,6 @@
                             }
                         });
                     });
-
-                    // Observar todas las imágenes con data-src
                     document.addEventListener('DOMContentLoaded', () => {
                         document.querySelectorAll('img[data-src]').forEach(img => {
                             imageObserver.observe(img);
@@ -441,21 +450,10 @@
                 }
             }
 
-            showAdminModal() {
-                document.getElementById('adminModal').classList.remove('hidden');
-            }
-
-            hideAdminModal() {
-                document.getElementById('adminModal').classList.add('hidden');
-            }
-
-            showPropertyModal() {
-                document.getElementById('propertyModal').classList.remove('hidden');
-            }
-
-            hidePropertyModal() {
-                document.getElementById('propertyModal').classList.add('hidden');
-            }
+            showAdminModal() { document.getElementById('adminModal').classList.remove('hidden'); }
+            hideAdminModal() { document.getElementById('adminModal').classList.add('hidden'); }
+            showPropertyModal() { document.getElementById('propertyModal').classList.remove('hidden'); }
+            hidePropertyModal() { document.getElementById('propertyModal').classList.add('hidden'); }
 
             handleAdminLogin() {
                 const password = document.getElementById('adminPassword').value;
@@ -486,14 +484,8 @@
                         .order('created_at', { ascending: false });
 
                     if (error) throw error;
-
-                    if (properties && properties.length > 0) {
-                        this.properties = properties;
-                        console.log(`✅ ${this.properties.length} propiedades cargadas desde Supabase`);
-                    } else {
-                        console.log('⚠️ No hay propiedades en Supabase, mostrando mensaje al usuario');
-                        this.properties = [];
-                    }
+                    this.properties = properties || [];
+                    console.log(`✅ ${this.properties.length} propiedades cargadas desde Supabase`);
                 } catch (error) {
                     console.error('Error cargando propiedades:', error);
                     this.properties = [];
@@ -566,24 +558,18 @@
                         </div>
                     </div>
                 `).join('');
-
-                // Iniciar lazy loading después de renderizar
                 this.initLazyLoading();
             }
 
             getOptimizedImageUrl(url) {
-                // Si es una imagen de Supabase Storage, podemos optimizarla
                 if (url.includes('supabase.co/storage')) {
-                    // Aquí podrías agregar parámetros de optimización si Supabase lo permite
                     return url;
                 }
                 return url;
             }
 
             initLazyLoading() {
-                // Cargar imágenes visibles inmediatamente
                 const lazyImages = document.querySelectorAll('img[data-src]');
-                
                 const imageObserver = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
@@ -594,7 +580,6 @@
                         }
                     });
                 });
-
                 lazyImages.forEach(img => imageObserver.observe(img));
             }
 
@@ -632,7 +617,6 @@
                     const group = new L.featureGroup(this.markers);
                     this.map.fitBounds(group.getBounds().pad(0.1));
                 } else {
-                    // Si no hay marcadores, mantener la vista por defecto
                     this.map.setView([18.7357, -70.1627], 8);
                 }
             }
@@ -659,18 +643,14 @@
                 const thumbnailsContainer = document.getElementById('propertyThumbnails');
 
                 if (property.images && property.images.length > 0) {
-                    // Usar la primera imagen como principal
                     mainImage.src = property.images[0];
-                    mainImage.loading = 'eager'; // Cargar inmediatamente ya que es visible
-                    
-                    // Crear thumbnails
+                    mainImage.loading = 'eager';
                     thumbnailsContainer.innerHTML = property.images.map((image, index) => `
                         <div class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${image}">
                             <img src="${image}" alt="Miniatura ${index + 1}" loading="lazy">
                         </div>
                     `).join('');
 
-                    // Event listeners para thumbnails
                     thumbnailsContainer.querySelectorAll('.thumbnail').forEach(thumb => {
                         thumb.addEventListener('click', () => {
                             const imageSrc = thumb.getAttribute('data-image');
@@ -680,7 +660,6 @@
                         });
                     });
                 } else {
-                    // Imagen por defecto si no hay imágenes
                     mainImage.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80';
                     thumbnailsContainer.innerHTML = '';
                 }
