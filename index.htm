@@ -4,10 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Inmobiliaria Moderna</title>
-    <!-- RUTAS CORREGIDAS -->
-    <link rel="stylesheet" href="./css/client.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== ESTILOS CLIENTE ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #2563eb; --primary-dark: #1d4ed8; --secondary: #64748b; --accent: #f59e0b;
+            --background: #f8fafc; --surface: #ffffff; --text: #1e293b; --text-light: #64748b;
+            --border: #e2e8f0; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        body { font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text); background: var(--background); }
+        .hidden { display: none !important; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Botón admin */
+        .admin-floating-btn { position: fixed; top: 20px; right: 20px; z-index: 1000; }
+        .admin-floating-btn button { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 25px; font-weight: 500; cursor: pointer; box-shadow: var(--shadow-lg); transition: all 0.3s ease; }
+        .admin-floating-btn button:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        
+        /* Modales */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-lg); width: 90%; max-width: 400px; overflow: hidden; }
+        .modal-header { background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .close-modal { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+        .modal-body { padding: 30px; }
+        .modal-body input { width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; margin-bottom: 20px; transition: border-color 0.3s ease; }
+        .modal-body input:focus { outline: none; border-color: var(--primary); }
+        .modal-buttons { display: flex; gap: 12px; }
+        
+        /* Botones */
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; flex: 1; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-secondary { background: var(--secondary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.3s ease; flex: 1; }
+        .btn-secondary:hover { background: #475569; }
+        
+        /* Header */
+        .modern-header { background: var(--surface); box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; }
+        .header-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; height: 70px; }
+        .logo h1 { color: var(--primary); font-size: 1.5rem; font-weight: 700; }
+        .main-nav { display: flex; gap: 30px; }
+        .main-nav a { text-decoration: none; color: var(--text); font-weight: 500; transition: color 0.3s ease; }
+        .main-nav a:hover { color: var(--primary); }
+        
+        /* Hero */
+        .hero { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 80px 0; text-align: center; }
+        .hero-content h2 { font-size: 3rem; font-weight: 700; margin-bottom: 16px; }
+        .hero-content p { font-size: 1.2rem; opacity: 0.9; }
+        
+        /* Filtros */
+        .filter-section { background: var(--surface); padding: 40px 0; margin-top: -40px; }
+        .filter-main-btn { background: var(--surface); border: 2px solid var(--border); border-radius: 12px; padding: 20px 24px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1.1rem; transition: all 0.3s ease; box-shadow: var(--shadow); }
+        .filter-main-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .filter-options { background: var(--surface); border: 2px solid var(--border); border-radius: 12px; margin-top: 12px; overflow: hidden; box-shadow: var(--shadow-lg); }
+        .filter-option { padding: 16px 24px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; border-bottom: 1px solid var(--border); }
+        .filter-option:last-child { border-bottom: none; }
+        .filter-option:hover, .filter-option.active { background: var(--primary); color: white; }
+        
+        /* Mapa */
+        .map-section { padding: 60px 0; background: var(--background); }
+        .section-title { font-size: 2rem; font-weight: 700; color: var(--text); margin-bottom: 30px; text-align: center; }
+        #map { height: 500px; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-lg); }
+        
+        /* Propiedades */
+        .properties-section { padding: 60px 0; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .properties-count { color: var(--text-light); font-weight: 500; }
+        .properties-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
+        .property-card { background: var(--surface); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); transition: all 0.3s ease; cursor: pointer; }
+        .property-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+        .property-image { width: 100%; height: 250px; position: relative; overflow: hidden; }
+        .property-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .property-card:hover .property-image img { transform: scale(1.05); }
+        .property-badge { position: absolute; top: 16px; left: 16px; background: var(--primary); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .property-info { padding: 24px; }
+        .property-info h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+        .property-price { font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+        .property-address { color: var(--text-light); margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+        .property-features-preview { display: flex; gap: 16px; margin-bottom: 20px; }
+        .property-features-preview span { color: var(--text-light); font-size: 0.9rem; }
+        .view-details-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.3s ease; }
+        .view-details-btn:hover { background: var(--primary-dark); }
+        
+        /* Modal propiedad */
+        .property-modal { max-width: 900px; max-height: 90vh; overflow-y: auto; }
+        .property-modal .modal-body { padding: 0; display: grid; grid-template-columns: 1fr 1fr; }
+        .property-gallery { background: var(--background); padding: 24px; }
+        .main-image { width: 100%; height: 300px; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+        .main-image img { width: 100%; height: 100%; object-fit: cover; }
+        .image-thumbnails { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .thumbnail { width: 100%; height: 80px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease; }
+        .thumbnail:hover, .thumbnail.active { border-color: var(--primary); }
+        .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        .property-details { padding: 24px; }
+        .price-section { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .price { font-size: 2rem; font-weight: 700; color: var(--primary); }
+        .type-badge { background: var(--accent); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .address { display: flex; align-items: center; gap: 8px; color: var(--text-light); margin-bottom: 20px; }
+        .features { display: flex; gap: 20px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .feature { display: flex; align-items: center; gap: 4px; font-weight: 500; }
+        .description h4 { margin-bottom: 12px; color: var(--text); }
+        .description p { color: var(--text-light); line-height: 1.6; }
+        .contact-section { margin-top: 24px; }
+        .btn-contact { width: 100%; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.3s ease; }
+        .btn-contact:hover { background: var(--primary-dark); }
+        
+        /* Footer */
+        .modern-footer { background: var(--text); color: white; text-align: center; padding: 30px 0; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-content h2 { font-size: 2rem; }
+            .property-modal .modal-body { grid-template-columns: 1fr; }
+            .section-header { flex-direction: column; gap: 16px; text-align: center; }
+            .properties-grid { grid-template-columns: 1fr; }
+            .features { flex-direction: column; gap: 12px; }
+            .main-nav { display: none; }
+        }
+    </style>
 </head>
 <body>
     <!-- Botón flotante admin -->
@@ -44,9 +159,7 @@
                     <div class="main-image">
                         <img id="mainPropertyImage" src="" alt="Imagen principal">
                     </div>
-                    <div class="image-thumbnails" id="propertyThumbnails">
-                        <!-- Miniaturas aquí -->
-                    </div>
+                    <div class="image-thumbnails" id="propertyThumbnails"></div>
                 </div>
                 <div class="property-details">
                     <div class="price-section">
@@ -171,10 +284,307 @@
         </div>
     </footer>
 
-    <!-- SCRIPTS CON RUTAS CORREGIDAS -->
+    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./js/config.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="./js/client.js"></script>
+    <script>
+        // CONFIGURACIÓN SUPABASE
+        const SUPABASE_URL = 'https://vbimfwzxdafuqexsnvso.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaW1md3p4ZGFmdXFleHNudnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTY4NDksImV4cCI6MjA3OTMzMjg0OX0.8ergS1GXQm6L0Om6AZReeTK0e3Q81k-UQSVJAu3xMNQ';
+        
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // CLIENT MANAGER
+        class ModernClientManager {
+            constructor() {
+                this.properties = [];
+                this.filteredProperties = [];
+                this.currentFilter = 'all';
+                this.map = null;
+                this.markers = [];
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.initializeMap();
+                this.loadProperties();
+            }
+
+            setupEventListeners() {
+                // BOTÓN ADMIN
+                document.getElementById('adminAccessBtn').addEventListener('click', () => this.showAdminModal());
+                document.getElementById('closeAdminModal').addEventListener('click', () => this.hideAdminModal());
+                document.getElementById('cancelAdminBtn').addEventListener('click', () => this.hideAdminModal());
+                document.getElementById('submitAdminBtn').addEventListener('click', () => this.handleAdminLogin());
+
+                // MODAL PROPIEDAD
+                document.getElementById('closePropertyModal').addEventListener('click', () => this.hidePropertyModal());
+                document.getElementById('propertyModal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('propertyModal')) this.hidePropertyModal();
+                });
+
+                // BOTÓN CONTACTAR
+                document.querySelector('.btn-contact').addEventListener('click', () => {
+                    alert('📞 Un agente se pondrá en contacto contigo pronto.');
+                });
+
+                // FILTROS
+                document.getElementById('mainFilterBtn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.getElementById('filterOptions').classList.toggle('hidden');
+                });
+
+                document.querySelectorAll('.filter-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        const filter = option.getAttribute('data-filter');
+                        this.applyFilter(filter);
+                        document.querySelectorAll('.filter-option').forEach(opt => opt.classList.remove('active'));
+                        option.classList.add('active');
+                        document.querySelector('.filter-text').textContent = option.querySelector('.option-text').textContent;
+                        document.getElementById('filterOptions').classList.add('hidden');
+                    });
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.filter-section')) {
+                        document.getElementById('filterOptions').classList.add('hidden');
+                    }
+                });
+            }
+
+            showAdminModal() {
+                document.getElementById('adminModal').classList.remove('hidden');
+            }
+
+            hideAdminModal() {
+                document.getElementById('adminModal').classList.add('hidden');
+            }
+
+            showPropertyModal() {
+                document.getElementById('propertyModal').classList.remove('hidden');
+            }
+
+            hidePropertyModal() {
+                document.getElementById('propertyModal').classList.add('hidden');
+            }
+
+            handleAdminLogin() {
+                const password = document.getElementById('adminPassword').value;
+                if (password === 'Admin4050') {
+                    window.location.href = 'admin.html';
+                } else {
+                    alert('❌ Contraseña incorrecta. Intenta nuevamente.');
+                }
+            }
+
+            initializeMap() {
+                try {
+                    this.map = L.map('map').setView([18.7357, -70.1627], 8);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(this.map);
+                } catch (error) {
+                    console.error('Error con mapa:', error);
+                }
+            }
+
+            async loadProperties() {
+                try {
+                    const { data: properties, error } = await window.supabase
+                        .from('properties')
+                        .select('*')
+                        .eq('status', 'disponible')
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    if (properties && properties.length > 0) {
+                        this.properties = properties;
+                    } else {
+                        this.loadExampleProperties();
+                    }
+                } catch (error) {
+                    console.error('Error cargando propiedades:', error);
+                    this.loadExampleProperties();
+                }
+
+                this.filteredProperties = [...this.properties];
+                this.renderProperties();
+                this.updatePropertiesCount();
+                this.renderMapMarkers();
+            }
+
+            loadExampleProperties() {
+                this.properties = [
+                    {
+                        id: 1,
+                        title: "Hermosa Casa Familiar con Piscina",
+                        type: "casa",
+                        price: 350000,
+                        location: {
+                            address: "Calle Principal #123, Santo Domingo Este",
+                            lat: 18.4855,
+                            lng: -69.8731
+                        },
+                        characteristics: {
+                            bedrooms: 4,
+                            bathrooms: 3,
+                            area: 220,
+                            parking: true,
+                            pool: true,
+                            garden: true
+                        },
+                        description: "Impresionante casa familiar ubicada en una zona residencial exclusiva. Cuenta con amplios espacios, diseño moderno y áreas verdes.",
+                        images: [
+                            "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600",
+                            "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600"
+                        ],
+                        status: "disponible",
+                        created_at: new Date().toISOString()
+                    }
+                ];
+            }
+
+            applyFilter(filter) {
+                this.currentFilter = filter;
+                this.filteredProperties = filter === 'all' ? [...this.properties] : this.properties.filter(property => property.type === filter);
+                this.renderProperties();
+                this.updatePropertiesCount();
+                this.renderMapMarkers();
+            }
+
+            updatePropertiesCount() {
+                document.getElementById('propertiesCount').textContent = this.filteredProperties.length;
+                const filterLabels = {
+                    'all': 'Todas las Propiedades', 'casa': 'Casas', 'apartamento': 'Apartamentos', 
+                    'oficina': 'Oficinas', 'solar': 'Solares'
+                };
+                document.getElementById('propertiesTitle').textContent = filterLabels[this.currentFilter] || 'Propiedades';
+            }
+
+            renderProperties() {
+                const container = document.getElementById('propertiesGrid');
+                if (!container) return;
+
+                if (this.filteredProperties.length === 0) {
+                    container.innerHTML = `<div class="no-properties" style="grid-column: 1/-1; text-align: center; padding: 60px; color: #64748b;">
+                        <h3>🏠 No hay propiedades disponibles</h3><p>Intenta con otros filtros de búsqueda</p></div>`;
+                    return;
+                }
+
+                container.innerHTML = this.filteredProperties.map(property => `
+                    <div class="property-card" onclick="clientManager.showPropertyDetails(${property.id})">
+                        <div class="property-image">
+                            <img src="${property.images[0]}" alt="${property.title}">
+                            <div class="property-badge">${this.getTypeLabel(property.type)}</div>
+                        </div>
+                        <div class="property-info">
+                            <h3>${property.title}</h3>
+                            <div class="property-price">$${property.price.toLocaleString()}</div>
+                            <div class="property-address">
+                                <span>📍</span>
+                                <span>${property.location.address}</span>
+                            </div>
+                            <div class="property-features-preview">
+                                ${property.characteristics.bedrooms > 0 ? `<span>🛏️ ${property.characteristics.bedrooms} hab.</span>` : ''}
+                                ${property.characteristics.bathrooms > 0 ? `<span>🚿 ${property.characteristics.bathrooms} baños</span>` : ''}
+                                <span>📐 ${property.characteristics.area} m²</span>
+                            </div>
+                            <button class="view-details-btn">Ver Detalles</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderMapMarkers() {
+                if (!this.map) return;
+                this.markers.forEach(marker => this.map.removeLayer(marker));
+                this.markers = [];
+
+                this.filteredProperties.forEach(property => {
+                    if (property.location && property.location.lat && property.location.lng) {
+                        const customIcon = L.divIcon({
+                            html: `<div style="background: #2563eb; color: white; padding: 8px; border-radius: 50%; font-size: 16px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🏠</div>`,
+                            className: 'property-marker',
+                            iconSize: [40, 40]
+                        });
+
+                        const marker = L.marker([property.location.lat, property.location.lng], { icon: customIcon })
+                            .addTo(this.map)
+                            .bindPopup(`
+                                <div style="min-width: 200px;">
+                                    <img src="${property.images[0]}" alt="${property.title}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
+                                    <h4 style="margin: 8px 0; font-size: 14px;">${property.title}</h4>
+                                    <p style="margin: 4px 0; font-weight: bold; color: #2563eb;">$${property.price.toLocaleString()}</p>
+                                    <button onclick="clientManager.showPropertyDetails(${property.id})" 
+                                            style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 8px;">
+                                        Ver Detalles
+                                    </button>
+                                </div>
+                            `);
+                        this.markers.push(marker);
+                    }
+                });
+
+                if (this.markers.length > 0) {
+                    const group = new L.featureGroup(this.markers);
+                    this.map.fitBounds(group.getBounds().pad(0.1));
+                }
+            }
+
+            showPropertyDetails(propertyId) {
+                const property = this.properties.find(p => p.id === propertyId);
+                if (property) {
+                    this.updatePropertyModal(property);
+                    this.showPropertyModal();
+                }
+            }
+
+            updatePropertyModal(property) {
+                document.getElementById('modalPropertyTitle').textContent = property.title;
+                document.getElementById('modalPropertyPrice').textContent = `$${property.price.toLocaleString()}`;
+                document.getElementById('modalPropertyType').textContent = this.getTypeLabel(property.type);
+                document.getElementById('modalPropertyAddress').querySelector('span:last-child').textContent = property.location.address;
+                document.getElementById('modalPropertyDescription').textContent = property.description;
+                document.getElementById('modalBedrooms').textContent = property.characteristics.bedrooms;
+                document.getElementById('modalBathrooms').textContent = property.characteristics.bathrooms;
+                document.getElementById('modalArea').textContent = property.characteristics.area;
+
+                const mainImage = document.getElementById('mainPropertyImage');
+                const thumbnailsContainer = document.getElementById('propertyThumbnails');
+
+                if (property.images && property.images.length > 0) {
+                    mainImage.src = property.images[0];
+                    thumbnailsContainer.innerHTML = property.images.map((image, index) => `
+                        <div class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${image}">
+                            <img src="${image}" alt="Miniatura ${index + 1}">
+                        </div>
+                    `).join('');
+
+                    thumbnailsContainer.querySelectorAll('.thumbnail').forEach(thumb => {
+                        thumb.addEventListener('click', () => {
+                            const imageSrc = thumb.getAttribute('data-image');
+                            mainImage.src = imageSrc;
+                            thumbnailsContainer.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                            thumb.classList.add('active');
+                        });
+                    });
+                }
+            }
+
+            getTypeLabel(type) {
+                const types = {
+                    'casa': 'Casa', 'apartamento': 'Apartamento', 'oficina': 'Oficina', 'solar': 'Solar'
+                };
+                return types[type] || type;
+            }
+        }
+
+        // INICIALIZAR
+        document.addEventListener('DOMContentLoaded', function() {
+            window.clientManager = new ModernClientManager();
+            window.clientManager.init();
+        });
+    </script>
 </body>
 </html>
