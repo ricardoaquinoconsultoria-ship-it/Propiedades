@@ -45,7 +45,7 @@
         .admin-section { background: var(--surface); border-radius: 16px; padding: 2rem; box-shadow: var(--shadow); margin-bottom: 2rem; }
         .admin-section h2 { color: var(--text); margin-bottom: 1.5rem; font-size: 1.5rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; }
         
-        /* Dashboard */
+        /* Panel */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         .stat-card { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: var(--shadow-lg); }
         .stat-card h3 { font-size: 2rem; margin-bottom: 0.5rem; font-weight: 700; }
@@ -131,7 +131,6 @@
         <header class="admin-header">
             <h1>⚙️ Panel de Administración</h1>
             <nav>
-                <!-- BOTÓN CORREGIDO -->
                 <a href="./" class="btn-store">🏠 Ver Catálogo</a>
                 <button id="logoutBtn" class="btn-logout">🚪 Cerrar Sesión</button>
             </nav>
@@ -140,7 +139,7 @@
         <div class="admin-layout">
             <aside class="sidebar">
                 <ul class="sidebar-menu">
-                    <li><a href="#dashboard" class="active">📊 Dashboard</a></li>
+                    <li><a href="#dashboard" class="active">📊 Panel</a></li>
                     <li><a href="#properties">🏠 Gestionar Propiedades</a></li>
                     <li><a href="#add-property">➕ Agregar Propiedad</a></li>
                 </ul>
@@ -148,7 +147,7 @@
 
             <main class="admin-main">
                 <section id="dashboard" class="admin-section">
-                    <h2>📊 Dashboard</h2>
+                    <h2>📊 Panel</h2>
                     <div class="stats-grid">
                         <div class="stat-card"><h3 id="totalProperties">0</h3><p>Total Propiedades</p></div>
                         <div class="stat-card"><h3 id="availableProperties">0</h3><p>Disponibles</p></div>
