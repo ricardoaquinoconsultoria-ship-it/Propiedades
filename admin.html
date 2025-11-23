@@ -141,7 +141,24 @@
                             </div>
                         </div>
 
-                        <!-- SECCIÓN DE IMÁGENES ELIMINADA -->
+                        <div class="form-section">
+                            <h3>🖼️ Subir Imágenes</h3>
+                            <div class="form-group">
+                                <label>Seleccionar imágenes:</label>
+                                <div class="image-upload-area" id="imageUploadArea">
+                                    <div class="upload-placeholder">
+                                        <span>📷</span>
+                                        <p>Haz clic aquí para seleccionar imágenes</p>
+                                        <small>Máximo 5 imágenes - Formatos: JPG, PNG, WebP</small>
+                                    </div>
+                                    <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
+                                </div>
+                                <button type="button" class="btn-primary" onclick="document.getElementById('imageUpload').click()" style="margin-top: 1rem; width: auto;">
+                                    📁 Seleccionar Archivos
+                                </button>
+                            </div>
+                            <div class="image-preview" id="imagePreview"></div>
+                        </div>
 
                         <button type="submit" class="btn-primary btn-submit">
                             <span id="submitText">🏠 Agregar Propiedad</span>
@@ -167,6 +184,7 @@
                 this.properties = [];
                 this.locationMap = null;
                 this.locationMarker = null;
+                this.selectedImages = []; // Array para almacenar las imágenes seleccionadas
                 this.editingProperty = null;
                 this.isLoading = false;
             }
@@ -175,6 +193,7 @@
                 await this.setupEventListeners();
                 await this.initializeLocationMap();
                 await this.loadPropertiesFromSupabase();
+                this.setupImageUpload();
             }
 
             async loadPropertiesFromSupabase() {
@@ -226,6 +245,102 @@
                 });
             }
 
+            setupImageUpload() {
+                const uploadArea = document.getElementById('imageUploadArea');
+                const fileInput = document.getElementById('imageUpload');
+
+                // Click en el área de upload
+                uploadArea.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                // Drag and drop
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--primary)';
+                    uploadArea.style.background = 'rgba(37, 99, 235, 0.05)';
+                });
+
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.style.borderColor = 'var(--border)';
+                    uploadArea.style.background = 'var(--background)';
+                });
+
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--border)';
+                    uploadArea.style.background = 'var(--background)';
+                    this.handleImageFiles(e.dataTransfer.files);
+                });
+
+                // Cambio en el input de archivos
+                fileInput.addEventListener('change', (e) => {
+                    this.handleImageFiles(e.target.files);
+                });
+            }
+
+            handleImageFiles(files) {
+                const remaining = 5 - this.selectedImages.length;
+                const filesToProcess = Array.from(files).slice(0, remaining);
+
+                if (filesToProcess.length === 0) {
+                    alert('❌ Ya has seleccionado el máximo de 5 imágenes');
+                    return;
+                }
+
+                filesToProcess.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.selectedImages.push({
+                                id: Date.now() + Math.random(),
+                                src: e.target.result, // Data URL
+                                file: file,
+                                name: file.name
+                            });
+                            this.updateImagePreview();
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        alert('❌ Solo se permiten archivos de imagen');
+                    }
+                });
+            }
+
+            updateImagePreview() {
+                const previewContainer = document.getElementById('imagePreview');
+                const uploadArea = document.getElementById('imageUploadArea');
+                
+                // Ocultar placeholder si hay imágenes
+                uploadArea.style.display = this.selectedImages.length > 0 ? 'none' : 'flex';
+                
+                // Mostrar preview de imágenes
+                previewContainer.innerHTML = this.selectedImages.map((image, index) => `
+                    <div class="preview-item">
+                        <img src="${image.src}" alt="${image.name}" loading="lazy">
+                        <button type="button" class="remove-image" data-id="${image.id}">×</button>
+                        <span class="image-number">${index + 1}</span>
+                        <div style="position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">
+                            ${Math.round(image.file.size / 1024)} KB
+                        </div>
+                    </div>
+                `).join('');
+
+                // Agregar event listeners para eliminar imágenes
+                previewContainer.querySelectorAll('.remove-image').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const imageId = btn.getAttribute('data-id');
+                        this.removeImage(imageId);
+                    });
+                });
+            }
+
+            removeImage(imageId) {
+                this.selectedImages = this.selectedImages.filter(img => img.id != imageId);
+                this.updateImagePreview();
+            }
+
             showSection(sectionId) {
                 document.querySelectorAll('.admin-section').forEach(section => {
                     section.classList.add('hidden');
@@ -266,8 +381,10 @@
             }
 
             getFormData() {
-                // Asignar imágenes por defecto automáticamente según el tipo
-                const defaultImages = this.getDefaultImages(document.getElementById('propertyType').value);
+                // Usar imágenes seleccionadas o imágenes por defecto
+                const images = this.selectedImages.length > 0 
+                    ? this.selectedImages.map(img => img.src) 
+                    : this.getDefaultImages(document.getElementById('propertyType').value);
                 
                 return {
                     title: document.getElementById('propertyTitle').value.trim(),
@@ -288,39 +405,30 @@
                         garden: document.getElementById('propertyGarden').checked || false
                     },
                     status: 'disponible',
-                    images: defaultImages, // Siempre imágenes por defecto
+                    images: images,
                     created_at: new Date().toISOString()
                 };
             }
 
             getDefaultImages(propertyType) {
-                // Imágenes por defecto según el tipo de propiedad - URLs públicas que funcionan en todos los navegadores
+                // Imágenes por defecto por si no se suben imágenes
                 const defaultImages = {
                     'casa': [
-                        'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop'
+                        'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop'
                     ],
                     'apartamento': [
-                        'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1567496898669-ee935f5f647a?w=800&h=600&fit=crop'
+                        'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop'
                     ],
                     'oficina': [
-                        'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1568992688065-536aad8a12f6?w=800&h=600&fit=crop'
+                        'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&h=600&fit=crop'
                     ],
                     'solar': [
-                        'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=800&h=600&fit=crop',
-                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop'
+                        'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=600&fit=crop'
                     ]
                 };
                 
                 return defaultImages[propertyType] || [
-                    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
-                    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=600&fit=crop'
+                    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop'
                 ];
             }
 
@@ -432,6 +540,7 @@
                 }
 
                 this.editingProperty = property;
+                this.selectedImages = [];
                 
                 // Llenar formulario
                 document.getElementById('propertyTitle').value = property.title || '';
@@ -448,6 +557,19 @@
                 document.getElementById('propertyParking').checked = property.characteristics?.parking || false;
                 document.getElementById('propertyPool').checked = property.characteristics?.pool || false;
                 document.getElementById('propertyGarden').checked = property.characteristics?.garden || false;
+
+                // Si hay imágenes existentes, mostrarlas
+                if (property.images && property.images.length > 0) {
+                    property.images.forEach((imageSrc, index) => {
+                        this.selectedImages.push({
+                            id: Date.now() + index,
+                            src: imageSrc,
+                            file: null,
+                            name: `Imagen ${index + 1}`
+                        });
+                    });
+                    this.updateImagePreview();
+                }
 
                 this.showSection('add-property');
                 document.querySelector('.sidebar-menu a[href="#add-property"]').click();
@@ -505,6 +627,8 @@
 
             resetForm() {
                 document.getElementById('propertyForm').reset();
+                this.selectedImages = [];
+                this.updateImagePreview();
                 this.editingProperty = null;
                 
                 document.querySelector('.btn-submit').innerHTML = '<span id="submitText">🏠 Agregar Propiedad</span><span id="submitLoading" class="hidden loading-spinner"></span>';
