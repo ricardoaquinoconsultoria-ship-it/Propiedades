@@ -110,6 +110,10 @@
         
         .required-field::after { content: " *"; color: #dc2626; }
         
+        /* Loading States */
+        .uploading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+        .upload-progress { background: var(--primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; }
+        
         @media (max-width: 768px) {
             .admin-layout { flex-direction: column; }
             .sidebar { width: 100%; padding: 1rem 0; }
@@ -244,7 +248,7 @@
                             <div class="image-upload-area" id="imageUploadArea">
                                 <div class="upload-placeholder">
                                     <span>📷</span>
-                                    <p>Arrastra imágenes aquí o haz clic para seleccionar<br><small>Máximo 5 imágenes</small></p>
+                                    <p>Arrastra imágenes aquí o haz clic para seleccionar<br><small>Máximo 5 imágenes - Se subirán a la nube</small></p>
                                 </div>
                                 <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
                             </div>
@@ -275,6 +279,7 @@
                 this.selectedImages = [];
                 this.maxImages = 5;
                 this.editingProperty = null;
+                this.currentPropertyId = null;
             }
 
             async init() {
@@ -357,18 +362,36 @@
                     submitBtn.innerHTML = '⏳ Guardando...';
                     submitBtn.disabled = true;
 
-                    const formData = this.getFormData();
-                    if (!this.validateForm(formData)) return;
+                    // Primero crear la propiedad para obtener ID
+                    const propertyData = this.getFormData();
+                    if (!this.validateForm(propertyData)) return;
 
-                    console.log('📤 Enviando propiedad a Supabase...');
-                    const { data, error } = await window.supabase
+                    console.log('📤 Creando propiedad en Supabase...');
+                    const { data: newProperty, error: propertyError } = await window.supabase
                         .from('properties')
-                        .insert([formData])
-                        .select();
+                        .insert([{ ...propertyData, images: [] }])
+                        .select()
+                        .single();
 
-                    if (error) throw error;
+                    if (propertyError) throw propertyError;
 
-                    console.log('✅ Propiedad agregada:', data);
+                    this.currentPropertyId = newProperty.id;
+                    console.log('✅ Propiedad creada con ID:', this.currentPropertyId);
+
+                    // Subir imágenes al Storage
+                    if (this.selectedImages.length > 0) {
+                        const imageUrls = await this.uploadImagesToStorage(this.selectedImages, this.currentPropertyId);
+                        
+                        // Actualizar propiedad con las URLs de las imágenes
+                        const { error: updateError } = await window.supabase
+                            .from('properties')
+                            .update({ images: imageUrls })
+                            .eq('id', this.currentPropertyId);
+
+                        if (updateError) throw updateError;
+                    }
+
+                    console.log('✅ Propiedad completada con imágenes');
                     alert('✅ Propiedad agregada exitosamente!');
                     await this.loadPropertiesFromSupabase();
                     this.resetForm();
@@ -376,9 +399,113 @@
                 } catch (error) {
                     console.error('Error:', error);
                     alert('❌ Error: ' + error.message);
+                    
+                    // Si hay error, eliminar la propiedad creada
+                    if (this.currentPropertyId) {
+                        await window.supabase.from('properties').delete().eq('id', this.currentPropertyId);
+                    }
                 } finally {
                     submitBtn.innerHTML = '🏠 Agregar Propiedad';
                     submitBtn.disabled = false;
+                    this.currentPropertyId = null;
+                }
+            }
+
+            async uploadImagesToStorage(images, propertyId) {
+                const imageUrls = [];
+                
+                for (let i = 0; i < images.length; i++) {
+                    const image = images[i];
+                    try {
+                        // Mostrar progreso
+                        this.showUploadProgress(i + 1, images.length);
+                        
+                        // Comprimir imagen antes de subir
+                        const compressedFile = await this.compressImage(image.file);
+                        
+                        // Subir a Supabase Storage
+                        const fileName = `property-${propertyId}-${Date.now()}-${i}.jpg`;
+                        const filePath = `${propertyId}/${fileName}`;
+                        
+                        const { data, error } = await window.supabase.storage
+                            .from('property-images')
+                            .upload(filePath, compressedFile);
+                            
+                        if (error) throw error;
+                        
+                        // Obtener URL pública
+                        const { data: urlData } = window.supabase.storage
+                            .from('property-images')
+                            .getPublicUrl(data.path);
+                            
+                        imageUrls.push(urlData.publicUrl);
+                        
+                    } catch (error) {
+                        console.error('Error subiendo imagen:', error);
+                        throw new Error(`Error subiendo imagen ${i + 1}: ${error.message}`);
+                    }
+                }
+                
+                this.hideUploadProgress();
+                return imageUrls;
+            }
+
+            async compressImage(file, maxWidth = 1200, quality = 0.8) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            
+                            // Redimensionar si es muy grande
+                            if (width > maxWidth) {
+                                height = (height * maxWidth) / width;
+                                width = maxWidth;
+                            }
+                            
+                            canvas.width = width;
+                            canvas.height = height;
+                            
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // Convertir a JPEG comprimido
+                            canvas.toBlob(resolve, 'image/jpeg', quality);
+                        };
+                    };
+                });
+            }
+
+            showUploadProgress(current, total) {
+                let progressElement = document.getElementById('uploadProgress');
+                if (!progressElement) {
+                    progressElement = document.createElement('div');
+                    progressElement.id = 'uploadProgress';
+                    progressElement.className = 'uploading-overlay';
+                    progressElement.innerHTML = `
+                        <div class="upload-progress">
+                            📤 Subiendo imagen ${current} de ${total}
+                        </div>
+                    `;
+                    document.getElementById('imagePreview').appendChild(progressElement);
+                } else {
+                    progressElement.innerHTML = `
+                        <div class="upload-progress">
+                            📤 Subiendo imagen ${current} de ${total}
+                        </div>
+                    `;
+                }
+            }
+
+            hideUploadProgress() {
+                const progressElement = document.getElementById('uploadProgress');
+                if (progressElement) {
+                    progressElement.remove();
                 }
             }
 
@@ -402,7 +529,7 @@
                         garden: document.getElementById('propertyGarden').checked || false
                     },
                     status: 'disponible',
-                    images: this.selectedImages.map(img => img.src),
+                    images: [], // Se llenará después con URLs del Storage
                     created_at: new Date().toISOString()
                 };
             }
@@ -476,6 +603,25 @@
 
                 fileInput.addEventListener('change', (e) => {
                     this.handleImageFiles(e.target.files);
+                });
+
+                // Drag and drop
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--primary)';
+                    uploadArea.style.background = 'rgba(37, 99, 235, 0.1)';
+                });
+
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.style.borderColor = 'var(--border)';
+                    uploadArea.style.background = 'var(--background)';
+                });
+
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--border)';
+                    uploadArea.style.background = 'var(--background)';
+                    this.handleImageFiles(e.dataTransfer.files);
                 });
             }
 
@@ -566,6 +712,9 @@
                             <div class="property-area">
                                 <small>Área: ${property.characteristics?.area || '0'} m²</small>
                             </div>
+                            <div class="property-images-count">
+                                <small>📷 ${property.images?.length || 0} imágenes</small>
+                            </div>
                         </div>
                         <div class="property-actions">
                             <button class="btn-edit" onclick="adminManager.editProperty(${property.id})">✏️ Editar</button>
@@ -603,15 +752,18 @@
                 document.getElementById('propertyPool').checked = property.characteristics?.pool || false;
                 document.getElementById('propertyGarden').checked = property.characteristics?.garden || false;
 
+                // Para edición, mantenemos las URLs existentes
                 this.selectedImages = property.images ? property.images.map((src, index) => ({
-                    id: Date.now() + index, src: src, file: null
+                    id: Date.now() + index, 
+                    src: src, 
+                    file: null // No tenemos el archivo original en edición
                 })) : [];
                 this.updateImagePreview();
 
                 this.showSection('add-property');
                 document.querySelector('.sidebar-menu a[href="#add-property"]').click();
                 document.querySelector('.btn-submit').innerHTML = '🔄 Actualizar Propiedad';
-                alert('✏️ Modo edición activado');
+                alert('✏️ Modo edición activado - Las imágenes existentes se mantendrán');
             }
 
             async handleUpdateProperty(propertyId) {
@@ -625,9 +777,23 @@
                     const formData = this.getFormData();
                     if (!this.validateForm(formData)) return;
 
+                    // Si hay nuevas imágenes, subirlas al Storage
+                    let imageUrls = this.editingProperty.images || [];
+                    const newImages = this.selectedImages.filter(img => !img.src.startsWith('http'));
+                    
+                    if (newImages.length > 0) {
+                        const newImageUrls = await this.uploadImagesToStorage(newImages, propertyId);
+                        imageUrls = [...imageUrls, ...newImageUrls];
+                    }
+
+                    const updateData = {
+                        ...formData,
+                        images: imageUrls
+                    };
+
                     const { error } = await window.supabase
                         .from('properties')
-                        .update(formData)
+                        .update(updateData)
                         .eq('id', propertyId);
 
                     if (error) throw error;
@@ -648,6 +814,9 @@
             async deleteProperty(propertyId) {
                 if (confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
                     try {
+                        // Opcional: eliminar imágenes del Storage
+                        // await this.deletePropertyImages(propertyId);
+                        
                         const { error } = await window.supabase
                             .from('properties')
                             .delete()
@@ -668,6 +837,7 @@
                 this.selectedImages = [];
                 this.updateImagePreview();
                 this.editingProperty = null;
+                this.currentPropertyId = null;
                 
                 if (this.locationMarker) {
                     this.locationMap.removeLayer(this.locationMarker);
@@ -676,6 +846,8 @@
                     document.getElementById('propertyLng').value = -70.1627;
                     document.getElementById('selectedCoordinates').textContent = 'Lat: 18.7357, Lng: -70.1627';
                 }
+                
+                document.querySelector('.btn-submit').innerHTML = '🏠 Agregar Propiedad';
             }
         }
 
